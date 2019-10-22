@@ -40,7 +40,7 @@ offset.storage.file.filename=/tmp/connect-sonarqube.offsets
 offset.flush.interval.ms=1000
 rest.port=8088
 ```
-
+#### Sonarqube Configuration
 Configuration for Sonarqube Source Connector Worker (sonarqube.properties)
 
 ```properties
@@ -87,6 +87,84 @@ key.ignore=true
 connection.url=http://<elasticsearch>:9200
 type.name=sonarqube
 
+```
+
+#### Mantis Configuration
+Configuration for Sonarqube Source Connector Worker (sonarqube.properties)
+
+```properties
+name=kafka-mantis-source-connector
+connector.class=connect.mantis.MantisSourceConnector
+tasks.max=1
+
+# Mantis Data Base Url
+mantis.url=jdbc:mysql://<your-mantis-address>:3307/mantis
+
+# Mantis Data Base Credidential
+mantis.user=
+mantis.pass=
+
+# Monitored Project
+mantis.project=Modelio
+
+# kafka topic names
+topic.newissue=mantis.issues
+topic.updatedissue=mantis.update
+topic.stat=mantis.stat
+
+#poll interval (86400 secs = 24 h)
+poll.interval.seconds=86400
+
+```
+
+Configuration for Elasticsearch Sink Connector Worker (elasticsearch.properties)
+
+```properties
+name=kafka-elasticsearch-mantis
+connector.class=io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+tasks.max=1
+topics=mantis.issues,mantis.update,mantis.stat
+key.ignore=true
+connection.url=http://<elasticsearch>:9200
+type.name=mantis
+```
+
+#### OpenProject Configuration
+Configuration for Sonarqube Source Connector Worker (sonarqube.properties)
+
+```properties
+name=kafka-openproject-ModelioNG-source-connector
+connector.class=connect.openproject.OpenProjectSourceConnector
+tasks.max=1
+
+# OpenProject Server Url
+openproject.url=http://<your-openproject-address>/openproject
+
+# OpenProject Api Key
+openproject.apikey=
+
+#Name of the monitored Project
+openproject.project=
+
+# kafka topic names
+openproject.topic=openproject
+openproject.stat.topic=openproject.stat
+
+#poll interval (86400 secs = 24 h)
+poll.interval.seconds=86400
+
+```
+
+Configuration for Elasticsearch Sink Connector Worker (elasticsearch.properties)
+
+```properties
+name=kafka-openproject-elasticsearch
+connector.class=io.confluent.connect.elasticsearch.ElasticsearchSinkConnector
+tasks.max=1
+topics=openproject,openproject.stat
+key.ignore=true
+connection.url=http://<elasticsearch>:9200
+type.name=openproject
 ```
 
 End with an example of getting some data out of the system or using it for a little demo
