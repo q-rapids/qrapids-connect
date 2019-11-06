@@ -1,0 +1,31 @@
+PUT redmine
+{ 
+  "mappings": {
+    "redmine": {
+      "properties": {
+        "redmineURL": { "type": "keyword" },
+        "project_id": { "type": "long" },
+        "project": { "type": "keyword" },
+        "issue_id": { "type": "long" },
+        "tracker": { "type": "keyword" },
+        "tracker_id": { "type": "long" },
+        "status": { "type": "keyword" },
+        "status_id": { "type": "long" },
+        "priority": { "type": "keyword" },
+        "priority_id": { "type": "long" },
+        "author": { "type": "keyword" },
+        "author_id": { "type": "long" },
+        "assigned_to": { "type": "keyword" },
+        "assigned_to_id": { "type": "long" },
+        "fixed_version": { "type": "keyword" },
+        "fixed_version_id": { "type": "long" },
+        "subject": { "type": "text" },
+        "description" : { "type": "text" },
+        "start_date": { "type": "keyword" },
+        "done_ratio": { "type": "long" },
+        "created_on": { "type": "date" },
+        "updated_on": { "type": "date" }
+      }
+    }
+  }
+}

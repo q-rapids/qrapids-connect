@@ -1,0 +1,33 @@
+PUT jira
+{ 
+  "mappings": {
+    "jira": {
+      "properties": {
+        "aggregatetimeestimate": { "type": "long" },
+        "aggregatetimespent": { "type": "long" },
+        "assignee": { "type": "keyword" },
+        "created": { "type": "date" },
+        "creator": { "type": "keyword" },
+        "description": { "type": "text" },
+        "duedate": { "type": "date" },
+        "issuetype": { "type": "keyword" },
+        "issueid": { "type": "keyword" },
+        "issuekey": { "type": "keyword" },
+        "jiraIssueApi": { "type": "keyword" },
+        "jiraUrl": { "type": "keyword" },
+        "lastViewed": { "type": "date" },
+        "priority": { "type": "keyword" },
+        "projectKey": { "type": "keyword" },
+        "projectName": { "type": "keyword" },
+        "reporter": { "type": "keyword" },
+        "resolution": { "type": "keyword" },
+        "resolutiondate": { "type": "date" },
+        "status": { "type": "keyword" },
+        "summary": { "type": "text" },
+        "timeestimate": { "type": "long"  },
+        "timespent": { "type": "long" },
+        "updated": { "type": "date" }
+      }
+    }
+  }
+}

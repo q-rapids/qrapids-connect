@@ -1,0 +1,16 @@
+PUT svn
+{
+  "mappings": {
+    "svn": {
+      "properties": {
+        "action":   { "type": "keyword" },
+        "author":   { "type": "keyword" },
+        "date":     { "type": "date" },
+        "filename": { "type": "keyword" },
+        "message":  { "type": "text" },
+        "nodekind": { "type": "keyword" },
+        "revision": { "type": "long"}
+      }
+    }
+  }
+}

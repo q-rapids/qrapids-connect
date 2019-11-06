@@ -1,0 +1,23 @@
+PUT gitlab
+{
+  "mappings": {
+    "gitlab": {
+      "properties": {
+        "gitlabURL": { "type": "text" },
+        "gitlabIssueURL": { "type": "text" },
+        "title" : { "type": "text" },
+        "created_at": { "type": "date" },
+        "updated_at": { "type": "date" },
+	"state": { "type":"text" },
+	"labels": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "text"
+            }
+          }
+        }
+      }
+    }
+  }
+}

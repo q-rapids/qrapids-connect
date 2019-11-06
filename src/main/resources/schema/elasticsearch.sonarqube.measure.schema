@@ -1,0 +1,24 @@
+PUT sonarqube.measures
+{
+  "mappings": {
+    "sonarqube": {
+      "properties": {
+        "Id": { "type": "keyword" },
+        "bcId": { "type": "keyword" },
+        "bcKey": { "type": "keyword" },
+        "bcName": { "type": "keyword" },
+        "bcQualifier": { "type": "keyword" },
+        "floatvalue": { "type": "float" },
+        "key": { "type": "keyword" },
+        "language": { "type": "keyword" },
+        "metric": { "type": "keyword" },
+        "name": { "type": "keyword" },
+        "path": { "type": "keyword" },
+        "qualifier": { "type": "keyword" },
+        "snapshotDate": { "type": "date" },
+        "sonarUrl": { "type": "keyword" },
+        "value": { "type": "keyword" }
+      }
+    }
+  }
+}

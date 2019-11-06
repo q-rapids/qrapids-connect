@@ -1,0 +1,23 @@
+PUT mantis.issues
+{ 
+  "mappings": {
+    "mantis": {
+      "properties": {
+        "issueId" : { "type": "keyword" },        
+        "issueType" : { "type": "keyword" },     
+        "created": { "type": "date" },            
+        "issueDescription" : { "type": "text" },  
+        "buildDetails"  : { "type": "keyword" },  
+        "issueStatus": { "type": "keyword" },     
+        "customer": { "type": "keyword" },        
+        "mantisURL": { "type": "keyword" },
+        "project": { "type": "keyword" },        
+		"priority": { "type": "keyword" },
+		"severity": { "type": "keyword" },
+		"reproducibility": { "type": "keyword" },
+		"os": { "type": "keyword" },
+		"platform": { "type": "keyword" }
+      }
+    }
+  }
+}

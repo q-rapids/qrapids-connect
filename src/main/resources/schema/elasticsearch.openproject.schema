@@ -1,0 +1,33 @@
+PUT openproject
+{ 
+  "mappings": {
+    "openproject": {
+      "properties": {     
+        "issueid": { "type": "keyword" },
+        "summary": { "type": "text" },
+        "description": { "type": "text" },
+        "issuetype": { "type": "keyword" },
+        "openProjectUrl": { "type": "keyword" },     
+        "projectId": { "type": "keyword" },
+        "projectName": { "type": "keyword" },
+        "version": { "type": "keyword" },
+        "parentId": { "type": "keyword" },
+        "parentSummary": { "type": "text" },       
+        "creator": { "type": "keyword" },
+        "responsible": { "type": "keyword" },    
+        "assignee": { "type": "keyword" },     
+        "created": { "type": "date" },
+        "updated": { "type": "date" },       
+        "startdate" : { "type": "date" },
+        "duedate": { "type": "date" },        
+        "timeestimate": { "type": "long"  },
+        "timespent": { "type": "long" },   
+        "remainingTime": { "type": "long" },  
+        "percentageDone" : { "type": "long" },  
+        "priority": { "type": "keyword" },
+        "status": { "type": "keyword" },
+        "ontime" : { "type": "keyword" }
+      }
+    }
+  }
+}

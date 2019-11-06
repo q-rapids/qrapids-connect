@@ -1,0 +1,34 @@
+PUT jenkins
+{
+  "mappings": {
+    "jenkins": {
+      "properties": {
+        "buildClazz": { "type": "keyword" },
+        "buildDescription": { "type": "text" },
+        "buildNumber": { "type": "integer" },
+        "buildUrl": { "type": "keyword" },
+        "created": { "type": "date" },
+        "displayName": { "type": "keyword" },
+        "duration": { "type": "long" },
+        "estimatedDuration": { "type": "long" },
+        "jenkinsUrl": { "type": "keyword" },
+        "jobClazz": { "type": "keyword" },
+        "jobName": { "type": "keyword" },
+        "jobUrl": { "type": "keyword" },
+        "lastBuild": { "type": "integer" },
+        "lastCompletedBuild": { "type": "integer" },
+        "lastFailedBuild": { "type": "integer" },
+        "lastStableBuild": { "type": "integer" },
+        "lastSuccessfullBuild": { "type": "integer" },
+        "lastUnstableBuild": { "type": "integer" },
+        "lastUnsuccessfullBuild": { "type": "integer" },
+        "result": { "type": "keyword" },
+        "testDuration": { "type": "double" },
+        "testsFail": { "type": "long" },
+        "testsPass": { "type": "long" },
+        "testsSkip": { "type": "long" },
+        "timestamp": { "type": "date" }
+      }
+    }
+  }
+}
