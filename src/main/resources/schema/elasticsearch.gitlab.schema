@@ -5,11 +5,21 @@ PUT gitlab
       "properties": {
         "gitlabURL": { "type": "text" },
         "gitlabIssueURL": { "type": "text" },
+        "project_id" : { "type": "long" },
+		"id": { "type": "long" },
+        "key": { "type": "long" },
         "title" : { "type": "text" },
         "created_at": { "type": "date" },
         "updated_at": { "type": "date" },
-	"state": { "type":"text" },
-	"labels": {
+        "due_date": { "type": "date" },
+        "closed_at": { "type": "date" },
+		"state": { "type":"text" },
+        "time_estimate": { "type": "long" },
+        "time_spent": { "type": "long" },
+        "tasks_has": { "type": "boolean" },
+        "tasks_total": { "type": "long" },
+        "tasks_completed": { "type": "long" },
+		"labels": {
           "type": "object",
           "properties": {
             "value": {

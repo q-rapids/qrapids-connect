@@ -3,9 +3,7 @@ package connect.gitlab;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +12,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.logging.Logger;
 
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -114,13 +113,41 @@ public class GitlabSourceTask extends SourceTask {
         List<SourceRecord> result = new ArrayList<>();
         
         for ( Issue i : redmineIssues.issues ) {
+
+            log.info("ISSUE ID: " + i.iid);
+            log.info("ISSUE URL: " + gitlabUrl+"/issues/"+i.iid);
+
             Struct struct = new Struct( GitlabSchema.issueSchema);
             struct.put( GitlabSchema.FIELD_URL, gitlabUrl);
             struct.put( GitlabSchema.FIELD_ISSUE_URL, gitlabUrl+"/issues/"+i.iid);
+            struct.put( GitlabSchema.FIELD_PROJECT_ID, i.project_id.toString());
+            // Issue IDs
+            struct.put( GitlabSchema.FIELD_ISSUE_ID, i.iid.toString()); // id for the project
+            struct.put( GitlabSchema.FIELD_ISSUE_KEY, i.id.toString()); // global ID
+            // Issue Info
             struct.put( GitlabSchema.FIELD_ISSUE_TITLE, i.title);
-            struct.put( GitlabSchema.FIELD_ISSUE_UPDATED_ON, dfZULU.format(i.updated_at) );
+            // Dates
+            if (i.created_at != null)
+                struct.put( GitlabSchema.FIELD_ISSUE_CREATED_AT, dfZULU.format(i.created_at));
+            if (i.updated_at != null)
+                struct.put( GitlabSchema.FIELD_ISSUE_UPDATED_AT, dfZULU.format(i.updated_at));
+            if (i.due_date != null)
+                struct.put(GitlabSchema.FIELD_ISSUE_DUE_DATE, dfZULU.format(i.due_date));
+            if (i.closed_at != null)
+                struct.put( GitlabSchema.FIELD_ISSUE_CLOSED_AT, dfZULU.format(i.closed_at));
+
             struct.put( GitlabSchema.FIELD_STATE, i.state.toString());
-            
+
+            // times
+            struct.put( GitlabSchema.FIELD_ISSUE_TIME_ESTIMATE, i.time_stats.time_estimate );
+            struct.put( GitlabSchema.FIELD_ISSUE_TIME_SPENT, i.time_stats.total_time_spent );
+            // tasks
+            struct.put( GitlabSchema.FIELD_ISSUE_TASKS_HAS, i.has_tasks);
+            if(i.has_tasks) {
+                struct.put(GitlabSchema.FIELD_ISSUE_TASKS_TOTAL, i.task_completion_status.n_tasks);
+                struct.put(GitlabSchema.FIELD_ISSUE_TASKS_COMPLETED, i.task_completion_status.n_completed_tasks);
+            }
+            // labels
             Vector<Struct> labels = new Vector<Struct>();
             for(int labelid = 0; labelid < i.labels.length; ++labelid){
                 Struct label = new Struct(GitlabSchema.labelsSchema);
@@ -136,7 +163,8 @@ public class GitlabSourceTask extends SourceTask {
             Map<String,String> sourceOffset = new HashMap<>();
             sourceOffset.put( "updated",  dfZULU.format( i.updated_at ) );
 
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, topic, GitlabSchema.issueSchema , struct);
+            // we use the gitlab id (i.id) as key in the elasticsearch index (_id)
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, topic, Schema.STRING_SCHEMA, i.id.toString(), GitlabSchema.issueSchema , struct);
             result.add(sr);
 
         }
