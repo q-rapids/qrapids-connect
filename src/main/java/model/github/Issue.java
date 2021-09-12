@@ -1,5 +1,7 @@
 package model.github;
 
+import java.util.Date;
+
 public class Issue {
 	
 	public String url;
@@ -28,9 +30,9 @@ public class Issue {
 	public Long comments;
 	
 	// timestamps, e.g. "2019-10-11T08:24:05Z"
-	public String created_at;
-	public String updated_at;
-	public String closed_at;
+	public Date created_at;
+	public Date updated_at;
+	public Date closed_at;
 	
 	public String author_association;
 	
