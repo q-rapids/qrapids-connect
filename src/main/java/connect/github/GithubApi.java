@@ -37,7 +37,7 @@ public class GithubApi {
 	}
 
 	public static void main(String[] args) {
-		GithubIssues ri = getIssues("https://api.github.com/repos/q-rapids/qrapids-dashboard","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","2021-03-01","2021-03-01",1);
+		GithubIssues ri = getIssues("https://api.github.com/repos/q-rapids/qrapids-dashboard","HsdhNpJXdhpgpd7bkJtB","2021-03-01","2021-03-01",1);
 		for(model.github.Issue i : ri.issues){
 			System.out.println(i.id+" "+i.title);
 		}
