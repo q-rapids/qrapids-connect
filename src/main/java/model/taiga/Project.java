@@ -17,6 +17,10 @@ public class Project {
     public Float defined_points;
     public Float total_points;
 
+    public Type issue_types[];
+    public Priority priorities[];
+    public Severity severities[];
+
     public Epic epics[];
     public Milestone milestones[];
     public Task task_custom_attributes[];
