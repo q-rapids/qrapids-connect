@@ -18,7 +18,7 @@ public class UserStory {
 
     public Date created_date;
     public Date modified_date;
-    public Date finished_date;
+    public Date finish_date;
 
     public Date due_date;
     public String due_date_reason;
