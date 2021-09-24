@@ -7,15 +7,15 @@ public class Project {
     public String description;
 
     public Integer id;
-    public Integer total_story_points;
+    public Float total_story_points;
     public Integer total_activity;
     public Integer total_activity_last_week;
     public Integer total_activity_last_year;
     public Integer total_activity_last_month;
-    public Integer assigned_points;
-    public Integer closed_points;
-    public Integer defined_points;
-    public Integer total_points;
+    public Integer total_closed_milestones;
+    public Float closed_points;
+    public Float defined_points;
+    public Float total_points;
 
     public Epic epics[];
     public Milestone milestones[];
