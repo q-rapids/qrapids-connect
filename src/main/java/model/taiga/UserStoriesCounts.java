@@ -2,6 +2,6 @@ package model.taiga;
 
 public class UserStoriesCounts {
 
-    public Integer progress;
-    public Integer total;
+    public Float progress;
+    public Float total;
 }
