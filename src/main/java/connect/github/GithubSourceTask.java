@@ -68,7 +68,7 @@ public class GithubSourceTask extends SourceTask {
 		GithubIssues redmineIssues;
 		// if mostRecentUpdate is available from offset -> storage use it
 
-		if(firstPoll == true){
+		if(firstPoll){
 			if ( mostRecentUpdate != null ) {
 				updatedSince = onlyDate.format(mostRecentUpdate);
 			} else {
@@ -87,7 +87,7 @@ public class GithubSourceTask extends SourceTask {
 		int total_issues= 0;
 		Date maxUpdatedOn = null;
 		do {
-			redmineIssues = GithubApi.getIssues(githubUrl, githubSecret, createdSince, updatedSince, offset);
+			redmineIssues = GithubApi.getIssues(githubUrl, githubSecret, createdSince, GithubApi.State.ALL, offset);
 
 			if (maxUpdatedOn == null &&  redmineIssues.issues.length > 0 ) {
 				maxUpdatedOn=redmineIssues.issues[0].updated_at;
@@ -120,7 +120,7 @@ public class GithubSourceTask extends SourceTask {
 			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_HTML_URL, i.html_url);
 			// Issue IDs
 			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_NUMBER, i.number); // id for the project
-			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_ID, i.id.toString()); // global ID
+			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_ID, i.id); // global ID
 			// Issue Info
 			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_TITLE, i.title);
 			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_BODY, i.body);
@@ -167,13 +167,13 @@ public class GithubSourceTask extends SourceTask {
 		log.info("connect-github: start");
 		log.info(props.toString());
 
-		githubUrl				= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
-		githubSecret			= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
-		githubUser 				= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
-		githubPass 				= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
-		topic = props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
-		createdSince			= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
-		githubInterval = props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
+		githubUrl		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
+		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
+		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
+		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
+		topic 			= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
+		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
+		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 
 		log.info("github.url: " + githubUrl);
 		log.info("github.created.since: " + createdSince);

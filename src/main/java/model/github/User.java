@@ -1,22 +1,24 @@
 package model.github;
 
 public class User {
-	String login;
-	long id;
-	String node_id;
-	String avatar_url;
-	String gravatar_id;
-	String url;
-	String html_url;
-	String followers_url;
-	String following_url;
-	String gists_url;
-	String starred_url;
-	String subscriptions_url;
-	String organizations_url;
-	String repos_url;
-	String events_url;
-	String received_events_url;
-	String type;
-	Boolean site_admin;
+	public String login;
+	public long id;
+	public String node_id;
+	public String avatar_url;
+	public String gravatar_id;
+	public String url;
+	public String html_url;
+	public String followers_url;
+	public String following_url;
+	public String gists_url;
+	public String starred_url;
+	public String subscriptions_url;
+	public String organizations_url;
+	public String repos_url;
+	public String events_url;
+	public String received_events_url;
+	public String type;
+	public Boolean site_admin;
+
+	public int contributions;
 }

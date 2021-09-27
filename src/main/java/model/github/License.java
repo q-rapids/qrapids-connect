@@ -1,9 +1,9 @@
 package model.github;
 
 public class License {
-	String key;
-	String name;
-	String spdx_id;
-	String url;
-	String node_id;
+	public String key;
+	public String name;
+	public String spdx_id;
+	public String url;
+	public String node_id;
 }
