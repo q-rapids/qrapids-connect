@@ -104,7 +104,6 @@ public class TaigaApi {
         RESTInvoker ri2 = new RESTInvoker("https://api.taiga.io/api/v1/projects/399143/stats", "Taiga Username", "Taiga Password");
         String json2 = ri2.getDataFromServer("");
         model.taiga.Project pr2 = gson.fromJson(json2, model.taiga.Project.class);
-        pr.assigned_points = pr2.assigned_points;
         pr.closed_points=pr2.closed_points;
         pr.defined_points=pr2.defined_points;
         pr.total_points=pr2.total_points;
