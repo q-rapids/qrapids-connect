@@ -42,8 +42,8 @@ public class GithubApi {
 
 		GithubIssues giss = new GithubIssues();
 		giss.issues=iss;
-		giss.total_count = new Long(iss.length);
-		giss.offset = new Long(offset);
+		giss.total_count = (long) iss.length;
+		giss.offset = (long) offset;
 		return giss;
 	}
 

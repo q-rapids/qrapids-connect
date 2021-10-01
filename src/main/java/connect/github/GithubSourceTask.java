@@ -144,6 +144,32 @@ public class GithubSourceTask extends SourceTask {
 
 			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_LABELS, labels);
 
+			//user
+			Struct user = new Struct(GithubSchema.userSchema);
+			user.put( GithubSchema.FIELD_GITHUB_USER_LOGIN, i.user.login );
+			user.put( GithubSchema.FIELD_GITHUB_USER_ID, Long.toString(i.user.id) );
+			user.put( GithubSchema.FIELD_GITHUB_USER_URL, i.user.url );
+			user.put( GithubSchema.FIELD_GITHUB_USER_TYPE, i.user.type );
+			user.put( GithubSchema.FIELD_GITHUB_USER_ADMIN, String.valueOf(i.user.site_admin) );
+
+			struct.put( GithubSchema.FIELD_GITHUB_ISSUE_USER, user);
+
+			//assignees
+			if(i.assignees != null){
+				Vector<Struct> assignees = new Vector<Struct>();
+				for (User a: i.assignees) {
+					Struct assignee = new Struct(GithubSchema.userSchema);
+					assignee.put( GithubSchema.FIELD_GITHUB_USER_LOGIN, a.login );
+					assignee.put( GithubSchema.FIELD_GITHUB_USER_ID, Long.toString(a.id) );
+					assignee.put( GithubSchema.FIELD_GITHUB_USER_URL, a.url );
+					assignee.put( GithubSchema.FIELD_GITHUB_USER_TYPE, a.type );
+					assignee.put( GithubSchema.FIELD_GITHUB_USER_ADMIN, String.valueOf(a.site_admin) );
+
+					assignees.add(assignee);
+				}
+				struct.put( GithubSchema.FIELD_GITHUB_ISSUE_ASSIGNEES, assignees);
+			}
+
 			Map<String,String> sourcePartition = new HashMap<>();
 			sourcePartition.put( "githubUrl", githubUrl );
 
