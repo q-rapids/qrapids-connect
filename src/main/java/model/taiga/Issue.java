@@ -11,10 +11,7 @@ public class Issue {
     public Integer priority;
     public Integer type;
     public Boolean is_closed;
-    public Integer milestone;
-    public String milestone_name;
-    public String milestone_slug;
-
+    
     public StatusExtraInfo status_extra_info;
     public AssignedToExtraInfo  assigned_to_extra_info;
 
