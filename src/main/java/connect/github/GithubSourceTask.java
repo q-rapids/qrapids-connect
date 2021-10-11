@@ -7,6 +7,7 @@ import java.util.*;
 import java.text.ParseException;
 import java.util.logging.Logger;
 
+import model.github.commit.Commit;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -29,7 +30,8 @@ public class GithubSourceTask extends SourceTask {
 	private String githubSecret;
 	private String githubUser;
 	private String githubPass;
-	private String topic;
+	private String issue_topic;
+	private String commit_topic;
 	private String githubInterval;
 	private Integer interval;
 
@@ -66,6 +68,7 @@ public class GithubSourceTask extends SourceTask {
 
 		int offset = 1;
 		GithubIssues redmineIssues;
+
 		// if mostRecentUpdate is available from offset -> storage use it
 
 		if(firstPoll){
@@ -84,13 +87,16 @@ public class GithubSourceTask extends SourceTask {
 			log.info("Query updated since: " + mostRecentUpdate);
 		}
 
+		//issues
+
 		int total_issues= 0;
-		Date maxUpdatedOn = null;
+		Date issue_maxUpdatedOn = null;
+
 		do {
 			redmineIssues = GithubApi.getIssues(githubUrl, githubSecret, createdSince, GithubApi.State.ALL, offset);
 
-			if (maxUpdatedOn == null &&  redmineIssues.issues.length > 0 ) {
-				maxUpdatedOn=redmineIssues.issues[0].updated_at;
+			if (issue_maxUpdatedOn == null &&  redmineIssues.issues.length > 0 ) {
+                issue_maxUpdatedOn=redmineIssues.issues[0].updated_at;
 			}
 
 			total_issues += redmineIssues.issues.length;
@@ -100,11 +106,82 @@ public class GithubSourceTask extends SourceTask {
 			offset += 1;
 		} while (true);
 
-		mostRecentUpdate = maxUpdatedOn;
+        mostRecentUpdate = issue_maxUpdatedOn;
+
+
+
+		//commits
+
+		int contributor_offset = 1;
+		List<User> contributors = new ArrayList<User>();
+		GithubContributor aux = GithubApi.getContributors(githubUrl, githubSecret, false, contributor_offset);
+
+		//get a list of all repository contributors
+		while(aux.total_count != 0){
+            contributors.addAll(Arrays.asList(aux.users));
+			aux = GithubApi.getContributors(githubUrl, githubSecret, false, ++contributor_offset);
+		}
+
+        for (User a : contributors) {
+			List<Commit> commitsList = new ArrayList<>();
+            int commit_offset = 1;
+
+            do {
+                String username = a.login;
+
+                GitHubCommits commit = GithubApi.getCommits(githubUrl, githubSecret, username, commit_offset++);
+
+                // download up to that moment
+                if (commit.commits.length == 0) break;
+
+				commitsList.addAll(Arrays.asList(commit.commits));
+
+            } while (true);
+
+			records.addAll(getCommitSourceRecords(commitsList, a));
+        }
+
 		firstPoll = false;
 
 		return records;
 	}
+
+    private List<SourceRecord> getCommitSourceRecords(List<Commit> commitsList, User user) {
+        List<SourceRecord> result = new ArrayList<>();
+
+        Vector<Struct> commits = new Vector<Struct>();
+
+        Struct userCommit = new Struct(GithubSchema.githubUserCommits);
+        userCommit.put(GithubSchema.FIELD_GITHUB_USERCOMMIT_USER, user.login);
+
+        for (Commit i : commitsList){
+            log.info("COMMIT URL: " + i.url);
+
+            Struct commit = new Struct(GithubSchema.githubCommit);
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_SHA, i.sha);
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_URL, i.url);
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_DATE, dfZULU.format(i.commit.author.date));
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE, i.commit.message);
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_VERIFIED, i.commit.verification.verified);
+            commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
+
+            commits.add(commit);
+        }
+
+        userCommit.put(GithubSchema.FIELD_GITHUB_USERCOMMIT_COMMIT, commits);
+
+        Map<String,String> sourcePartition = new HashMap<>();
+        sourcePartition.put( "githubUrl", githubUrl );
+
+        Map<String,String> sourceOffset = new HashMap<>();
+        sourceOffset.put( "updated",  dfZULU.format( commitsList.get(0).commit.author.date ) );
+
+        // we use the github id (i.id) as key in the elasticsearch index (_id)
+        SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, user.id, GithubSchema.githubUserCommits , userCommit);
+        result.add(sr);
+
+        return result;
+    }
 
 	private List<SourceRecord> getIssueSourceRecords(GithubIssues redmineIssues, Date updatedSince) {
 
@@ -177,7 +254,7 @@ public class GithubSourceTask extends SourceTask {
 			sourceOffset.put( "updated",  dfZULU.format( i.updated_at ) );
 
 			// we use the github id (i.id) as key in the elasticsearch index (_id)
-			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, topic, Schema.STRING_SCHEMA, i.number.toString(), GithubSchema.githubIssue , struct);
+			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, issue_topic, Schema.STRING_SCHEMA, i.number.toString(), GithubSchema.githubIssue , struct);
 			result.add(sr);
 
 		}
@@ -195,9 +272,10 @@ public class GithubSourceTask extends SourceTask {
 
 		githubUrl		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
 		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
-		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
-		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
-		topic 			= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
+		//githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
+		//githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
+		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
+		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
 		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 

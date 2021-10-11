@@ -68,9 +68,7 @@ public class SonarqubeSourceTask extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-		
-		
-		
+
 		List<SourceRecord> records = new ArrayList<>(); 
 		
 		// log.info("lastPollDelta:" + (System.currentTimeMillis() - lastPoll) + " interval:" + interval );

@@ -2,7 +2,7 @@ package connect.github;
 
 import com.google.gson.Gson;
 import model.github.*;
-import net.sf.json.JSONObject;
+import model.github.commit.Commit;
 import rest.RESTInvoker;
 
 import java.text.DateFormat;
@@ -106,10 +106,27 @@ public class GithubApi {
 		return gmile;
 	}
 
+	// Returns all commits made by a user
+	public static GitHubCommits getCommits(String url, String secret, String user, int offset) {
+
+		String api = "/commits";
+		String apiparams = "?author=" + user + "&page=" + offset;
+		String urlCall = url + api + apiparams;
+		RESTInvoker ri = new RESTInvoker(urlCall, secret);
+		String json = ri.getDataFromServer("");
+		Commit[] commits = gson.fromJson(json, Commit[].class);
+
+		GitHubCommits gcommit = new GitHubCommits();
+		gcommit.commits = commits;
+		gcommit.total_count = (long) commits.length;
+		gcommit.offset = (long) offset;
+		return gcommit;
+	}
+
 	public static void main(String[] args) {
-		GithubIssues ri = getIssues("https://api.github.com/repos/q-rapids/qrapids-dashboard","HsdhNpJXdhpgpd7bkJtB", "2021-01-01", State.CLOSED,1);
-		for (Issue a: ri.issues) {
-			System.out.println(a.id + ' ' + a.state);
+		GitHubCommits ri = getCommits("https://api.github.com/repos/q-rapids/qrapids-dashboard","HsdhNpJXdhpgpd7bkJtB", "alejandravv" ,1);
+		for (Commit a: ri.commits) {
+			System.out.println(a.committer.login + " " + a.commit.author.date + " " + a.commit.message);
 		}
 
 	}
