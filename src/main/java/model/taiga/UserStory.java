@@ -10,6 +10,7 @@ public class UserStory {
     public Integer status;
     public Integer total_points;
     public Integer milestone;
+    public Epic[] epics;
     public String milestone_name;
     public String milestone_slug;
 

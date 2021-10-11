@@ -52,7 +52,7 @@ public class RESTInvoker {
             URL url = new URL(baseUrl + path);
 
             URLConnection urlConnection = setUsernamePassword(url);
-            
+            urlConnection.setRequestProperty("x-disable-pagination","True");
             if(secret != null){
         		urlConnection.setRequestProperty("PRIVATE-TOKEN",secret);
         	}
