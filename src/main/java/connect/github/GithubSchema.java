@@ -48,15 +48,17 @@ public class GithubSchema {
 	public static String FIELD_GITHUB_COMMIT_MESSAGE = "message";
 	public static String FIELD_GITHUB_COMMIT_VERIFIED = "verified";
 	public static String FIELD_GITHUB_COMMIT_REASON = "verified_reason";
+	public static String FIELD_GITHUB_COMMIT_STATS = "stats";
 
 	//userCommit
 	public static String FIELD_GITHUB_USERCOMMIT_USER = "user";
 	public static String FIELD_GITHUB_USERCOMMIT_COMMIT = "commits";
 
-	/**
-	 * Schema Github Issues
-	 * Defines data structure of an issue for kafka
-	 */
+	//stats
+	public static String FIELD_GITHUB_STATS_TOTAL = "total";
+	public static String FIELD_GITHUB_STATS_ADD = "additions";
+	public static String FIELD_GITHUB_STATS_DEL = "deletions";
+
 
 	//issues
 
@@ -92,6 +94,12 @@ public class GithubSchema {
 
 	//commits
 
+	public static Schema githubStats = SchemaBuilder.struct().name("stats")
+			.field(FIELD_GITHUB_STATS_TOTAL, Schema.OPTIONAL_STRING_SCHEMA)
+			.field(FIELD_GITHUB_STATS_ADD, Schema.OPTIONAL_STRING_SCHEMA)
+			.field(FIELD_GITHUB_STATS_DEL, Schema.OPTIONAL_STRING_SCHEMA)
+			.build();
+
 	public static Schema githubCommit = SchemaBuilder.struct().name("commit")
 		.field(FIELD_GITHUB_COMMIT_SHA, Schema.STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_URL, Schema.OPTIONAL_STRING_SCHEMA)
@@ -99,12 +107,11 @@ public class GithubSchema {
 		.field(FIELD_GITHUB_COMMIT_MESSAGE, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_VERIFIED, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_REASON, Schema.OPTIONAL_STRING_SCHEMA)
+		.field(FIELD_GITHUB_COMMIT_STATS, githubStats)
 		.build();
 
 	public static Schema githubUserCommits = SchemaBuilder.struct().name("userCommits")
-
 		.field(FIELD_GITHUB_USERCOMMIT_USER, Schema.STRING_SCHEMA)
 		.field(FIELD_GITHUB_USERCOMMIT_COMMIT, SchemaBuilder.array(githubCommit).build())
 		.build();
-	
 }

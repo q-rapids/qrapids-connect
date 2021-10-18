@@ -8,5 +8,6 @@ public class Commit {
     public String url;
     public User author;
     public User committer;
+    public Stats stats;
 }
 

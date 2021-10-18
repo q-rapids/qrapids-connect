@@ -3,6 +3,7 @@ package connect.github;
 import com.google.gson.Gson;
 import model.github.*;
 import model.github.commit.Commit;
+import model.github.commit.CommitStats;
 import rest.RESTInvoker;
 
 import java.text.DateFormat;
@@ -115,6 +116,15 @@ public class GithubApi {
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");
 		Commit[] commits = gson.fromJson(json, Commit[].class);
+
+		for (Commit c: commits) {
+			apiparams = "/" + c.sha;
+			urlCall = url + api + apiparams;
+			ri = new RESTInvoker(urlCall, secret);
+			json = ri.getDataFromServer("");
+			CommitStats stats = gson.fromJson(json, CommitStats.class);
+			c.stats = stats.stats;
+		}
 
 		GitHubCommits gcommit = new GitHubCommits();
 		gcommit.commits = commits;

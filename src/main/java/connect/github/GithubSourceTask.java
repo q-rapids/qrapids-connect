@@ -146,6 +146,7 @@ public class GithubSourceTask extends SourceTask {
 		return records;
 	}
 
+
     private List<SourceRecord> getCommitSourceRecords(List<Commit> commitsList, User user) {
         List<SourceRecord> result = new ArrayList<>();
 
@@ -165,6 +166,13 @@ public class GithubSourceTask extends SourceTask {
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_VERIFIED, i.commit.verification.verified);
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 
+			Struct stats = new Struct(GithubSchema.githubStats);
+			stats.put(GithubSchema.FIELD_GITHUB_STATS_TOTAL, i.stats.total);
+			stats.put(GithubSchema.FIELD_GITHUB_STATS_ADD, i.stats.additions);
+			stats.put(GithubSchema.FIELD_GITHUB_STATS_DEL, i.stats.deletions);
+
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_STATS, stats);
+
             commits.add(commit);
         }
 
@@ -182,6 +190,7 @@ public class GithubSourceTask extends SourceTask {
 
         return result;
     }
+
 
 	private List<SourceRecord> getIssueSourceRecords(GithubIssues redmineIssues, Date updatedSince) {
 
@@ -272,16 +281,21 @@ public class GithubSourceTask extends SourceTask {
 
 		githubUrl		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
 		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
-		//githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
-		//githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
+		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
+		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
 		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
 		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 
+		if(commit_topic == null) commit_topic = "github.commits";
+		
 		log.info("github.url: " + githubUrl);
 		log.info("github.created.since: " + createdSince);
 		log.info("github.interval.seconds: " + githubInterval);
+
+		log.info("github.issue.topic: " + issue_topic);
+		log.info("github.commit.topic: " + commit_topic);
 		
 		if ( (githubInterval == null || githubInterval.isEmpty()) ) {
 			interval = 3600;
