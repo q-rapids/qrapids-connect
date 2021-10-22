@@ -47,14 +47,12 @@ public class RESTInvoker {
     public String getDataFromServer(String path) {
         StringBuilder sb = new StringBuilder();
         try {
-
-        	
             URL url = new URL(baseUrl + path);
 
             URLConnection urlConnection = setUsernamePassword(url);
             
             if(secret != null){
-        		urlConnection.setRequestProperty("PRIVATE-TOKEN",secret);
+        		urlConnection.setRequestProperty("Authorization","Bearer " + secret);
         	}
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));

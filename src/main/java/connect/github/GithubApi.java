@@ -35,7 +35,7 @@ public class GithubApi {
 	public static GithubIssues getIssues(String url, String secret, String updatedSince, State state, int offset) {
 
 		String api = "/issues";
-		String apiparams = "?since="+ updatedSince +"&state=" + state.getValue() + "&order_by=updated_at&sort=desc&page=" + offset;
+		String apiparams = "?since="+ updatedSince +"&state=" + state.getValue() + "&order_by=updated_at&sort=desc&per_page=100&page=" + offset;
 		String urlCall = url + api + apiparams;
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");
@@ -111,7 +111,7 @@ public class GithubApi {
 	public static GitHubCommits getCommits(String url, String secret, String user, int offset) {
 
 		String api = "/commits";
-		String apiparams = "?author=" + user + "&page=" + offset;
+		String apiparams = "?author=" + user + "&per_page=100&page=" + offset;
 		String urlCall = url + api + apiparams;
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");

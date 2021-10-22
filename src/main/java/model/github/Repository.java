@@ -4,10 +4,10 @@ import com.google.gson.annotations.SerializedName;
 
 public class Repository {
 	
-	Long id;
-	String node_id;
-	String name;
-	String full_name;
+	public Long id;
+	public String node_id;
+	public String name;
+	public String full_name;
 	
 	@SerializedName("private") // keyword
 	Boolean privateState;
@@ -17,7 +17,7 @@ public class Repository {
 	String html_url;
 	String description;
 	Boolean fork;
-	String url;
+	public String url;
 	
 	String forks_url;
 	String keys_url;

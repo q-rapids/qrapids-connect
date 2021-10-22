@@ -36,9 +36,9 @@ public class GithubSourceTask extends SourceTask {
 	private Integer interval;
 
 	private String createdSince;
-	private String updatedSince;
 
-	private Date mostRecentUpdate;
+	private Date issueMostRecentUpdate;
+	private Date commitMostRecentUpdate;
 
 	private static DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -66,55 +66,59 @@ public class GithubSourceTask extends SourceTask {
 
 		lastPoll = System.currentTimeMillis();
 
-		int offset = 1;
-		GithubIssues redmineIssues;
-
 		// if mostRecentUpdate is available from offset -> storage use it
 
 		if(firstPoll){
-			if ( mostRecentUpdate != null ) {
-				updatedSince = onlyDate.format(mostRecentUpdate);
-			} else {
-				updatedSince = "2000-01-01";
-				try{
-					mostRecentUpdate=onlyDate.parse(updatedSince);
-				}catch(ParseException e){
-					log.info("unable to parse "+updatedSince);
-					throw new InterruptedException();
-				}
+			try{
+				issueMostRecentUpdate = onlyDate.parse(createdSince);
+				commitMostRecentUpdate = onlyDate.parse(createdSince);
+
+			}catch(ParseException e){
+				log.info("unable to parse "+createdSince);
+				throw new InterruptedException();
 			}
 		}else{
-			log.info("Query updated since: " + mostRecentUpdate);
+			log.info("Issue info updated since: " + issueMostRecentUpdate);
+			log.info("Commit info updated since: " + commitMostRecentUpdate);
 		}
+
+
 
 		//issues
 
-		int total_issues= 0;
+		/*
+		int offset = 1;
+		GithubIssues redmineIssues;
 		Date issue_maxUpdatedOn = null;
 
 		do {
 			redmineIssues = GithubApi.getIssues(githubUrl, githubSecret, createdSince, GithubApi.State.ALL, offset);
+			log.info("ISSUES: Obtained " + redmineIssues.total_count + " issues from page " + offset);
 
 			if (issue_maxUpdatedOn == null &&  redmineIssues.issues.length > 0 ) {
                 issue_maxUpdatedOn=redmineIssues.issues[0].updated_at;
 			}
 
-			total_issues += redmineIssues.issues.length;
 			// download up to that moment
-			if(redmineIssues.issues.length == 0 || mostRecentUpdate.compareTo(redmineIssues.issues[0].updated_at) >= 0)break;
-			records.addAll( getIssueSourceRecords(redmineIssues, mostRecentUpdate) );
+			if(redmineIssues.issues.length == 0 || issueMostRecentUpdate.compareTo(redmineIssues.issues[0].updated_at) >= 0)break;
+			records.addAll( getIssueSourceRecords(redmineIssues, issueMostRecentUpdate) );
 			offset += 1;
 		} while (true);
 
-        mostRecentUpdate = issue_maxUpdatedOn;
+        issueMostRecentUpdate = issue_maxUpdatedOn;
+
+ 		*/
 
 
 
 		//commits
 
+		Date commit_maxUpdatedOn = null;
 		int contributor_offset = 1;
 		List<User> contributors = new ArrayList<User>();
 		GithubContributor aux = GithubApi.getContributors(githubUrl, githubSecret, false, contributor_offset);
+
+		Repository repo = GithubApi.getRepository(githubUrl, githubSecret);
 
 		//get a list of all repository contributors
 		while(aux.total_count != 0){
@@ -125,21 +129,30 @@ public class GithubSourceTask extends SourceTask {
         for (User a : contributors) {
 			List<Commit> commitsList = new ArrayList<>();
             int commit_offset = 1;
+			GitHubCommits commit;
 
             do {
                 String username = a.login;
+                commit = GithubApi.getCommits(githubUrl, githubSecret, username, commit_offset++);
+				log.info("COMMITS: Obtained " + commit.total_count + " commits from user " + username + " with page " + (commit_offset - 1));
 
-                GitHubCommits commit = GithubApi.getCommits(githubUrl, githubSecret, username, commit_offset++);
+				if (commit_maxUpdatedOn == null &&  commit.total_count > 0 ) {
+					commit_maxUpdatedOn = commit.commits[0].commit.author.date;
+				}
 
                 // download up to that moment
-                if (commit.commits.length == 0) break;
+                if (commit.commits.length == 0 || commitMostRecentUpdate.compareTo(commit.commits[0].commit.author.date) >= 0) break;
 
-				commitsList.addAll(Arrays.asList(commit.commits));
+				for(Commit auxComm : commit.commits){
+					if(commitMostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsList.add(auxComm);
+				}
 
-            } while (true);
+            } while (commit.total_count == 100);
 
-			records.addAll(getCommitSourceRecords(commitsList, a));
+			if (commitsList.size() != 0) records.addAll(getCommitSourceRecords(commitsList, a, repo));
         }
+
+		if(commit_maxUpdatedOn != null)	commitMostRecentUpdate = commit_maxUpdatedOn;
 
 		firstPoll = false;
 
@@ -147,13 +160,8 @@ public class GithubSourceTask extends SourceTask {
 	}
 
 
-    private List<SourceRecord> getCommitSourceRecords(List<Commit> commitsList, User user) {
+    private List<SourceRecord> getCommitSourceRecords(List<Commit> commitsList, User user, Repository repo) {
         List<SourceRecord> result = new ArrayList<>();
-
-        Vector<Struct> commits = new Vector<Struct>();
-
-        Struct userCommit = new Struct(GithubSchema.githubUserCommits);
-        userCommit.put(GithubSchema.FIELD_GITHUB_USERCOMMIT_USER, user.login);
 
         for (Commit i : commitsList){
             log.info("COMMIT URL: " + i.url);
@@ -165,6 +173,8 @@ public class GithubSourceTask extends SourceTask {
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE, i.commit.message);
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_VERIFIED, i.commit.verification.verified);
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REPO, repo.name);
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 
 			Struct stats = new Struct(GithubSchema.githubStats);
 			stats.put(GithubSchema.FIELD_GITHUB_STATS_TOTAL, i.stats.total);
@@ -173,20 +183,25 @@ public class GithubSourceTask extends SourceTask {
 
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_STATS, stats);
 
-            commits.add(commit);
+			Struct userSchema = new Struct(GithubSchema.userSchema);
+			userSchema.put( GithubSchema.FIELD_GITHUB_USER_LOGIN, user.login );
+			userSchema.put( GithubSchema.FIELD_GITHUB_USER_ID, Long.toString(user.id) );
+			userSchema.put( GithubSchema.FIELD_GITHUB_USER_URL, user.url );
+			userSchema.put( GithubSchema.FIELD_GITHUB_USER_TYPE, user.type );
+			userSchema.put( GithubSchema.FIELD_GITHUB_USER_ADMIN, String.valueOf(user.site_admin) );
+
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_USER, userSchema);
+
+			Map<String,String> sourcePartition = new HashMap<>();
+			sourcePartition.put( "githubUrl", githubUrl );
+
+			Map<String,String> sourceOffset = new HashMap<>();
+			sourceOffset.put( "updated",  dfZULU.format( commitsList.size() != 0 ? commitsList.get(0).commit.author.date : commitMostRecentUpdate) );
+
+			// we use the github id (i.id) as key in the elasticsearch index (_id)
+			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, user.id, GithubSchema.githubCommit , commit);
+			result.add(sr);
         }
-
-        userCommit.put(GithubSchema.FIELD_GITHUB_USERCOMMIT_COMMIT, commits);
-
-        Map<String,String> sourcePartition = new HashMap<>();
-        sourcePartition.put( "githubUrl", githubUrl );
-
-        Map<String,String> sourceOffset = new HashMap<>();
-        sourceOffset.put( "updated",  dfZULU.format( commitsList.get(0).commit.author.date ) );
-
-        // we use the github id (i.id) as key in the elasticsearch index (_id)
-        SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, user.id, GithubSchema.githubUserCommits , userCommit);
-        result.add(sr);
 
         return result;
     }
@@ -311,8 +326,8 @@ public class GithubSourceTask extends SourceTask {
             Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
             if (offset != null ) {
                 try {
-                    mostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
-                    log.info("--------------------------" + "found offset: updated=" + mostRecentUpdate);
+                    issueMostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
+                    log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
                 } catch (ParseException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

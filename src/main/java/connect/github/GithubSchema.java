@@ -44,6 +44,8 @@ public class GithubSchema {
 	//commit
 	public static String FIELD_GITHUB_COMMIT_SHA = "sha";
 	public static String FIELD_GITHUB_COMMIT_URL = "url";
+	public static String FIELD_GITHUB_COMMIT_USER = "user";
+	public static String FIELD_GITHUB_COMMIT_REPO = "repository";
 	public static String FIELD_GITHUB_COMMIT_DATE = "date";
 	public static String FIELD_GITHUB_COMMIT_MESSAGE = "message";
 	public static String FIELD_GITHUB_COMMIT_VERIFIED = "verified";
@@ -51,8 +53,8 @@ public class GithubSchema {
 	public static String FIELD_GITHUB_COMMIT_STATS = "stats";
 
 	//userCommit
-	public static String FIELD_GITHUB_USERCOMMIT_USER = "user";
-	public static String FIELD_GITHUB_USERCOMMIT_COMMIT = "commits";
+
+
 
 	//stats
 	public static String FIELD_GITHUB_STATS_TOTAL = "total";
@@ -103,15 +105,12 @@ public class GithubSchema {
 	public static Schema githubCommit = SchemaBuilder.struct().name("commit")
 		.field(FIELD_GITHUB_COMMIT_SHA, Schema.STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_URL, Schema.OPTIONAL_STRING_SCHEMA)
+		.field(FIELD_GITHUB_COMMIT_USER, userSchema)
+		.field(FIELD_GITHUB_COMMIT_REPO, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_DATE, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_MESSAGE, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_VERIFIED, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_REASON, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_STATS, githubStats)
-		.build();
-
-	public static Schema githubUserCommits = SchemaBuilder.struct().name("userCommits")
-		.field(FIELD_GITHUB_USERCOMMIT_USER, Schema.STRING_SCHEMA)
-		.field(FIELD_GITHUB_USERCOMMIT_COMMIT, SchemaBuilder.array(githubCommit).build())
 		.build();
 }
