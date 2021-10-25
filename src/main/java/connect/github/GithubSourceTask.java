@@ -26,7 +26,7 @@ public class GithubSourceTask extends SourceTask {
 
 	private String version = "0.0.1";
 
-	private String githubUrl;
+	private String[] githubUrls;
 	private String githubSecret;
 	private String githubUser;
 	private String githubPass;
@@ -38,7 +38,7 @@ public class GithubSourceTask extends SourceTask {
 	private String createdSince;
 
 	private Date issueMostRecentUpdate;
-	private Date commitMostRecentUpdate;
+	private Map<String, Date> commitMostRecentUpdate;
 
 	private static DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -71,7 +71,7 @@ public class GithubSourceTask extends SourceTask {
 		if(firstPoll){
 			try{
 				issueMostRecentUpdate = onlyDate.parse(createdSince);
-				commitMostRecentUpdate = onlyDate.parse(createdSince);
+				for(String url : githubUrls) commitMostRecentUpdate.put(url, onlyDate.parse(createdSince));
 
 			}catch(ParseException e){
 				log.info("unable to parse "+createdSince);
@@ -113,49 +113,57 @@ public class GithubSourceTask extends SourceTask {
 
 		//commits
 
-		Date commit_maxUpdatedOn = null;
-		int contributor_offset = 1;
-		List<User> contributors = new ArrayList<User>();
-		GithubContributor aux = GithubApi.getContributors(githubUrl, githubSecret, false, contributor_offset);
+		for(String url : githubUrls) {
 
-		Repository repo = GithubApi.getRepository(githubUrl, githubSecret);
+			log.info("Obtaining commits from " + url);
 
-		//get a list of all repository contributors
-		while(aux.total_count != 0){
-            contributors.addAll(Arrays.asList(aux.users));
-			aux = GithubApi.getContributors(githubUrl, githubSecret, false, ++contributor_offset);
+			Date commit_maxUpdatedOn = null;
+			Date mostRecentUpdate = commitMostRecentUpdate.get(url);
+
+			int contributor_offset = 1;
+			List<User> contributors = new ArrayList<User>();
+			GithubContributor aux = GithubApi.getContributors(url, githubSecret, false, contributor_offset);
+
+			Repository repo = GithubApi.getRepository(url, githubSecret);
+
+			//get a list of all repository contributors
+			while (aux.total_count != 0) {
+				contributors.addAll(Arrays.asList(aux.users));
+				aux = GithubApi.getContributors(url, githubSecret, false, ++contributor_offset);
+			}
+
+			for (User a : contributors) {
+				List<Commit> commitsList = new ArrayList<>();
+				int commit_offset = 1;
+				GitHubCommits commit;
+
+				do {
+					String username = a.login;
+					commit = GithubApi.getCommits(url, githubSecret, username, commit_offset++);
+					log.info("COMMITS: Obtained " + commit.total_count + " commits from user " + username + " with page " + (commit_offset - 1));
+
+					if (commit_maxUpdatedOn == null && commit.total_count > 0) {
+						commit_maxUpdatedOn = commit.commits[0].commit.author.date;
+					}
+
+					// download up to that moment
+					if (commit.commits.length == 0 || mostRecentUpdate.compareTo(commit.commits[0].commit.author.date) >= 0)
+						break;
+
+					// only new commits are saved
+					for (Commit auxComm : commit.commits) {
+						if (mostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsList.add(auxComm);
+					}
+
+				} while (commit.total_count == 100);
+
+				if (commitsList.size() != 0) records.addAll(getCommitSourceRecords(commitsList, a, repo));
+			}
+
+			if (commit_maxUpdatedOn != null) commitMostRecentUpdate.put(url, commit_maxUpdatedOn);
 		}
 
-        for (User a : contributors) {
-			List<Commit> commitsList = new ArrayList<>();
-            int commit_offset = 1;
-			GitHubCommits commit;
-
-            do {
-                String username = a.login;
-                commit = GithubApi.getCommits(githubUrl, githubSecret, username, commit_offset++);
-				log.info("COMMITS: Obtained " + commit.total_count + " commits from user " + username + " with page " + (commit_offset - 1));
-
-				if (commit_maxUpdatedOn == null &&  commit.total_count > 0 ) {
-					commit_maxUpdatedOn = commit.commits[0].commit.author.date;
-				}
-
-                // download up to that moment
-                if (commit.commits.length == 0 || commitMostRecentUpdate.compareTo(commit.commits[0].commit.author.date) >= 0) break;
-
-				for(Commit auxComm : commit.commits){
-					if(commitMostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsList.add(auxComm);
-				}
-
-            } while (commit.total_count == 100);
-
-			if (commitsList.size() != 0) records.addAll(getCommitSourceRecords(commitsList, a, repo));
-        }
-
-		if(commit_maxUpdatedOn != null)	commitMostRecentUpdate = commit_maxUpdatedOn;
-
 		firstPoll = false;
-
 		return records;
 	}
 
@@ -193,10 +201,10 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_USER, userSchema);
 
 			Map<String,String> sourcePartition = new HashMap<>();
-			sourcePartition.put( "githubUrl", githubUrl );
+			sourcePartition.put( "githubUrl", repo.url );
 
 			Map<String,String> sourceOffset = new HashMap<>();
-			sourceOffset.put( "updated",  dfZULU.format( commitsList.size() != 0 ? commitsList.get(0).commit.author.date : commitMostRecentUpdate) );
+			sourceOffset.put( "added", dfZULU.format( new Date(System.currentTimeMillis()) ));
 
 			// we use the github id (i.id) as key in the elasticsearch index (_id)
 			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, user.id, GithubSchema.githubCommit , commit);
@@ -206,7 +214,7 @@ public class GithubSourceTask extends SourceTask {
         return result;
     }
 
-
+/*
 	private List<SourceRecord> getIssueSourceRecords(GithubIssues redmineIssues, Date updatedSince) {
 
 		List<SourceRecord> result = new ArrayList<>();
@@ -287,14 +295,21 @@ public class GithubSourceTask extends SourceTask {
 
 		return result;
 	}
+
+ */
 	
 	@Override
 	public void start(Map<String, String> props) {
 
+		commitMostRecentUpdate = new HashMap<String, Date>();
+
 		log.info("connect-github: start");
 		log.info(props.toString());
 
-		githubUrl		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
+		String aux		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
+
+		githubUrls = aux.split(",");
+
 		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
 		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
 		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
@@ -305,7 +320,7 @@ public class GithubSourceTask extends SourceTask {
 
 		if(commit_topic == null) commit_topic = "github.commits";
 		
-		log.info("github.url: " + githubUrl);
+		for(String url : githubUrls) log.info("github.url: " + url);
 		log.info("github.created.since: " + createdSince);
 		log.info("github.interval.seconds: " + githubInterval);
 
@@ -320,7 +335,7 @@ public class GithubSourceTask extends SourceTask {
 
 		// offsets present?
 		Map<String,String> sourcePartition = new HashMap<>();
-		sourcePartition.put( "githubUrl", githubUrl );
+		sourcePartition.put( "githubUrl", githubUrls[0] );
 
         if ( context != null ) {
             Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
