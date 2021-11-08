@@ -30,6 +30,7 @@ public class GithubSourceConnector extends SourceConnector {
 	private String githubUser;
 	private String githubPass;	
 	private String githubIssuesTopic;
+	private String githubCommitsTopic;
 	private String githubInterval;
 	private String githubCreatedSince;
 
@@ -48,6 +49,7 @@ public class GithubSourceConnector extends SourceConnector {
 		githubUser = props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
 		githubPass = props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		githubIssuesTopic = props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
+		githubCommitsTopic = props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG);
 		githubInterval = props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 		githubCreatedSince = props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 
@@ -72,6 +74,7 @@ public class GithubSourceConnector extends SourceConnector {
 		config.put( GithubSourceConfig.GITHUB_USER_CONFIG, githubUser );
 		config.put( GithubSourceConfig.GITHUB_PASS_CONFIG, githubPass );
 		config.put( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG, githubIssuesTopic );
+		config.put( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG, githubCommitsTopic );
 		config.put( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG, "" + githubInterval);
 		config.put( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG, githubCreatedSince );
 		configs.add(config);

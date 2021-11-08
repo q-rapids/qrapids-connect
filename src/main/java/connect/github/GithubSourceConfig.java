@@ -60,13 +60,13 @@ public class GithubSourceConfig extends AbstractConfig {
     static {
         DEFS
                 .define(GITHUB_URL_CONFIG,              ConfigDef.Type.STRING,  ConfigDef.Importance.HIGH, GITHUB_URL_CONFIG_DOC, GITHUB_GROUP,1, ConfigDef.Width.LONG, GITHUB_URL_CONFIG_DISPLAY)
-                .define(GITHUB_SECRET_CONFIG,           ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_SECRET_CONFIG_DOC,            GITHUB_GROUP, 3, ConfigDef.Width.MEDIUM, GITHUB_SECRET_CONFIG_DISPLAY)
-                .define(GITHUB_CREATED_SINCE_CONFIG,    ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_CREATED_SINCE_CONFIG_DOC,     GITHUB_GROUP, 4, ConfigDef.Width.MEDIUM, GITHUB_CREATED_SINCE_CONFIG_DISPLAY)
-                .define(GITHUB_USER_CONFIG,             ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_USER_CONFIG_DOC,              GITHUB_GROUP, 1, ConfigDef.Width.MEDIUM, GITHUB_USER_CONFIG_DISPLAY)
-                .define(GITHUB_PASS_CONFIG,             ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_PASS_CONFIG_DOC,              GITHUB_GROUP, 2, ConfigDef.Width.MEDIUM, GITHUB_PASS_CONFIG_DISPLAY)
-                .define(GITHUB_ISSUES_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_ISSUES_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_ISSUES_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 5, ConfigDef.Width.MEDIUM, GITHUB_ISSUES_TOPIC_CONFIG_DISPLAY)
-                .define(GITHUB_COMMIT_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_COMMIT_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_COMMIT_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 6, ConfigDef.Width.MEDIUM, GITHUB_COMMIT_TOPIC_CONFIG_DISPLAY)
-                .define(GITHUB_INTERVAL_SECONDS_CONFIG, ConfigDef.Type.LONG,    GITHUB_INTERVAL_SECONDS_CONFIG_DEFAULT, ConfigDef.Importance.LOW, GITHUB_INTERVAL_SECONDS_CONFIG_DOC,  GITHUB_GROUP, 7, ConfigDef.Width.SHORT,  GITHUB_INTERVAL_SECONDS_CONFIG_DISPLAY);
+                .define(GITHUB_SECRET_CONFIG,           ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_SECRET_CONFIG_DOC,            GITHUB_GROUP, 4, ConfigDef.Width.MEDIUM, GITHUB_SECRET_CONFIG_DISPLAY)
+                .define(GITHUB_CREATED_SINCE_CONFIG,    ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_CREATED_SINCE_CONFIG_DOC,     GITHUB_GROUP, 5, ConfigDef.Width.MEDIUM, GITHUB_CREATED_SINCE_CONFIG_DISPLAY)
+                .define(GITHUB_USER_CONFIG,             ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_USER_CONFIG_DOC,              GITHUB_GROUP, 2, ConfigDef.Width.MEDIUM, GITHUB_USER_CONFIG_DISPLAY)
+                .define(GITHUB_PASS_CONFIG,             ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_PASS_CONFIG_DOC,              GITHUB_GROUP, 3, ConfigDef.Width.MEDIUM, GITHUB_PASS_CONFIG_DISPLAY)
+                .define(GITHUB_ISSUES_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_ISSUES_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_ISSUES_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 7, ConfigDef.Width.LONG, GITHUB_ISSUES_TOPIC_CONFIG_DISPLAY)
+                .define(GITHUB_COMMIT_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_COMMIT_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_COMMIT_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 6, ConfigDef.Width.LONG, GITHUB_COMMIT_TOPIC_CONFIG_DISPLAY)
+                .define(GITHUB_INTERVAL_SECONDS_CONFIG, ConfigDef.Type.LONG,    GITHUB_INTERVAL_SECONDS_CONFIG_DEFAULT, ConfigDef.Importance.LOW, GITHUB_INTERVAL_SECONDS_CONFIG_DOC,  GITHUB_GROUP, 8, ConfigDef.Width.SHORT,  GITHUB_INTERVAL_SECONDS_CONFIG_DISPLAY);
     }
 
     public GithubSourceConfig(Map<String, String> originals) {

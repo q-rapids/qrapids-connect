@@ -206,8 +206,8 @@ public class GithubSourceTask extends SourceTask {
 			Map<String,String> sourceOffset = new HashMap<>();
 			sourceOffset.put( "added", dfZULU.format( new Date(System.currentTimeMillis()) ));
 
-			// we use the github id (i.id) as key in the elasticsearch index (_id)
-			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, user.id, GithubSchema.githubCommit , commit);
+			// we use the github commit id (i.sha) as key in the elasticsearch index (_id)
+			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, i.sha, GithubSchema.githubCommit , commit);
 			result.add(sr);
         }
 
@@ -317,8 +317,6 @@ public class GithubSourceTask extends SourceTask {
 		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
 		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
-
-		if(commit_topic == null) commit_topic = "github.commits";
 		
 		for(String url : githubUrls) log.info("github.url: " + url);
 		log.info("github.created.since: " + createdSince);
