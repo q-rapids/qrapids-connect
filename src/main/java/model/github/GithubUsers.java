@@ -1,6 +1,6 @@
 package model.github;
 
-public class GithubContributor {
+public class GithubUsers {
 
     public User users[];
 

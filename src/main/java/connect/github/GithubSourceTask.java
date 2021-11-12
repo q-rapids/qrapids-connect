@@ -7,6 +7,8 @@ import java.util.*;
 import java.text.ParseException;
 import java.util.logging.Logger;
 
+import model.github.branch.Branch;
+import model.github.branch.GitHubBranches;
 import model.github.commit.Commit;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -18,8 +20,8 @@ import model.github.*;
 
 public class GithubSourceTask extends SourceTask {
 
-	private static TimeZone tzUTC = TimeZone.getTimeZone("UTC");
-	private static DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+	private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
+	private static final DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
 	static {
 		dfZULU.setTimeZone(tzUTC);
 	}
@@ -36,11 +38,12 @@ public class GithubSourceTask extends SourceTask {
 	private Integer interval;
 
 	private String createdSince;
+	private Date defaultDate;
 
 	private Date issueMostRecentUpdate;
-	private Map<String, Date> commitMostRecentUpdate;
+	private Map<String, Map<String, Date>> commitMostRecentUpdate;
 
-	private static DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
+	private static final DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
 
 	// millis of last poll
 	private long lastPoll = 0;
@@ -70,8 +73,12 @@ public class GithubSourceTask extends SourceTask {
 
 		if(firstPoll){
 			try{
+				defaultDate = onlyDate.parse(createdSince);
 				issueMostRecentUpdate = onlyDate.parse(createdSince);
-				for(String url : githubUrls) commitMostRecentUpdate.put(url, onlyDate.parse(createdSince));
+				for(String url : githubUrls){
+					Map<String, Date> aux = new HashMap<>();
+					commitMostRecentUpdate.put(url, aux);
+				}
 
 			}catch(ParseException e){
 				log.info("unable to parse "+createdSince);
@@ -115,35 +122,55 @@ public class GithubSourceTask extends SourceTask {
 
 		for(String url : githubUrls) {
 
-			log.info("Obtaining commits from " + url);
-
-			Date commit_maxUpdatedOn = null;
-			Date mostRecentUpdate = commitMostRecentUpdate.get(url);
-
-			int contributor_offset = 1;
-			List<User> contributors = new ArrayList<User>();
-			GithubContributor aux = GithubApi.getContributors(url, githubSecret, false, contributor_offset);
-
 			Repository repo = GithubApi.getRepository(url, githubSecret);
 
-			//get a list of all repository contributors
-			while (aux.total_count != 0) {
-				contributors.addAll(Arrays.asList(aux.users));
-				aux = GithubApi.getContributors(url, githubSecret, false, ++contributor_offset);
-			}
+			log.info("Obtaining commits from " + url);
 
-			for (User a : contributors) {
-				List<Commit> commitsList = new ArrayList<>();
+			Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(url);
+
+			int offset = 1;
+			List<Branch> branches = new ArrayList<>();
+			GitHubBranches auxBranch;
+			//get a list of all repository branches
+			do{
+				auxBranch = GithubApi.getBranches(url, githubSecret, offset++);
+				branches.addAll(Arrays.asList(auxBranch.branches));
+			}while(auxBranch.total_count == 100);
+			log.info("BRANCHES: Obtained " + branches.size() + " different branches");
+
+
+			//fetch collaborator list
+			offset = 1;
+			List<User> collaborators = new ArrayList<>();
+			GithubUsers auxUser;
+			do{
+				auxUser = GithubApi.getCollaborators(url, githubSecret, offset++);
+				collaborators.addAll(Arrays.asList(auxUser.users));
+			}while(auxUser.total_count == 100);
+			log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
+
+
+			//getting a set of all new commits in every branch
+
+			Set<Commit> commitsSet = new HashSet<>();
+
+			for (Branch b : branches) {
+
+				Date branch_maxUpdatedOn = null;
+
+				Date mostRecentUpdate = mostRecentBranchUpdates.get(b.name);
+				if(mostRecentUpdate == null) mostRecentUpdate = defaultDate;
+
 				int commit_offset = 1;
 				GitHubCommits commit;
 
 				do {
-					String username = a.login;
-					commit = GithubApi.getCommits(url, githubSecret, username, commit_offset++);
-					log.info("COMMITS: Obtained " + commit.total_count + " commits from user " + username + " with page " + (commit_offset - 1));
+					String branchName = b.name;
+					commit = GithubApi.getCommits(url, githubSecret, branchName, commit_offset++);
+					log.info("COMMITS: Obtained " + commit.total_count + " commits from branch " + b.name + " with page " + (commit_offset - 1));
 
-					if (commit_maxUpdatedOn == null && commit.total_count > 0) {
-						commit_maxUpdatedOn = commit.commits[0].commit.author.date;
+					if (branch_maxUpdatedOn == null && commit.total_count > 0) {
+						branch_maxUpdatedOn = commit.commits[0].commit.author.date;
 					}
 
 					// download up to that moment
@@ -151,16 +178,20 @@ public class GithubSourceTask extends SourceTask {
 						break;
 
 					// only new commits are saved
+					int commitSetSize = commitsSet.size();
 					for (Commit auxComm : commit.commits) {
-						if (mostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsList.add(auxComm);
+						if (mostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsSet.add(auxComm);
 					}
+					if(commitSetSize != commitsSet.size()) log.info("COMMITS: Added " + (commitsSet.size() - commitSetSize) + " new commits from branch " + b.name);
 
 				} while (commit.total_count == 100);
 
-				if (commitsList.size() != 0) records.addAll(getCommitSourceRecords(commitsList, a, repo));
+				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
 			}
 
-			if (commit_maxUpdatedOn != null) commitMostRecentUpdate.put(url, commit_maxUpdatedOn);
+			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
+
+			commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
 		}
 
 		firstPoll = false;
@@ -168,10 +199,26 @@ public class GithubSourceTask extends SourceTask {
 	}
 
 
-    private List<SourceRecord> getCommitSourceRecords(List<Commit> commitsList, User user, Repository repo) {
+    private List<SourceRecord> getCommitSourceRecords(Set<Commit> commitsList, List<User> collaborators, Repository repo) {
         List<SourceRecord> result = new ArrayList<>();
 
         for (Commit i : commitsList){
+
+			User user = null;
+
+			//if the commit author is not associated with github, a default user is created
+			if(i.author != null) {
+				for (User u : collaborators) {
+					if (u.login.equals(i.author.login)) {
+						user = u;
+						break;
+					}
+				}
+			}
+
+			//if the commit author is not associated with github, a default user is created
+			if(user == null) user = new User("anonymous", 0, "", "", false);
+
             log.info("COMMIT URL: " + i.url);
 
             Struct commit = new Struct(GithubSchema.githubCommit);
@@ -301,7 +348,7 @@ public class GithubSourceTask extends SourceTask {
 	@Override
 	public void start(Map<String, String> props) {
 
-		commitMostRecentUpdate = new HashMap<String, Date>();
+		commitMostRecentUpdate = new HashMap<>();
 
 		log.info("connect-github: start");
 		log.info(props.toString());

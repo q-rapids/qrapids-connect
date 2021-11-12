@@ -21,4 +21,12 @@ public class User {
 	public Boolean site_admin;
 
 	public int contributions;
+
+	public User(String login, int id, String url, String type, boolean site_admin) {
+		this.login = login;
+		this.id = id;
+		this.url = url;
+		this.type = type;
+		this.site_admin = site_admin;
+	}
 }

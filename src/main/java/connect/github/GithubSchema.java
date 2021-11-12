@@ -97,9 +97,9 @@ public class GithubSchema {
 	//commits
 
 	public static Schema githubStats = SchemaBuilder.struct().name("stats")
-			.field(FIELD_GITHUB_STATS_TOTAL, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(FIELD_GITHUB_STATS_ADD, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(FIELD_GITHUB_STATS_DEL, Schema.OPTIONAL_STRING_SCHEMA)
+			.field(FIELD_GITHUB_STATS_TOTAL, Schema.OPTIONAL_INT64_SCHEMA)
+			.field(FIELD_GITHUB_STATS_ADD, Schema.OPTIONAL_INT64_SCHEMA)
+			.field(FIELD_GITHUB_STATS_DEL, Schema.OPTIONAL_INT64_SCHEMA)
 			.build();
 
 	public static Schema githubCommit = SchemaBuilder.struct().name("commit")

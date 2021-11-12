@@ -2,6 +2,8 @@ package connect.github;
 
 import com.google.gson.Gson;
 import model.github.*;
+import model.github.branch.Branch;
+import model.github.branch.GitHubBranches;
 import model.github.commit.Commit;
 import model.github.commit.CommitStats;
 import rest.RESTInvoker;
@@ -49,20 +51,37 @@ public class GithubApi {
 	}
 
 	// Returns all users that contributed to the repo and their n# of contributions
-	public static GithubContributor getContributors(String url, String secret, boolean anon, int offset) {
+	public static GitHubBranches getBranches(String url, String secret, int offset) {
 
-		String api = "/contributors";
-		String apiparams = "?anon=" + anon + "&page=" + offset;
+		String api = "/branches";
+		String apiparams = "?per_page=100" + "&page=" + offset;
 		String urlCall = url + api + apiparams;
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");
-		model.github.User[] con = gson.fromJson(json, model.github.User[].class);
+		Branch[] con = gson.fromJson(json, Branch[].class);
 
-		GithubContributor gcon = new GithubContributor();
-		gcon.users=con;
-		gcon.total_count = (long) con.length;
-		gcon.offset = (long) offset;
-		return gcon;
+		GitHubBranches gbr = new GitHubBranches();
+		gbr.branches=con;
+		gbr.total_count = (long) con.length;
+		gbr.offset = (long) offset;
+		return gbr;
+	}
+
+	// Returns all users that contributed to the repo and their n# of contributions
+	public static GithubUsers getCollaborators(String url, String secret, int offset) {
+
+		String api = "/collaborators";
+		String apiparams = "?per_page=100" + "&page=" + offset;
+		String urlCall = url + api + apiparams;
+		RESTInvoker ri = new RESTInvoker(urlCall, secret);
+		String json = ri.getDataFromServer("");
+		User[] coll = gson.fromJson(json, User[].class);
+
+		GithubUsers gcoll = new GithubUsers();
+		gcoll.users=coll;
+		gcoll.total_count = (long) coll.length;
+		gcoll.offset = (long) offset;
+		return gcoll;
 	}
 
 	// Returns all repository labels
@@ -108,10 +127,10 @@ public class GithubApi {
 	}
 
 	// Returns all commits made by a user
-	public static GitHubCommits getCommits(String url, String secret, String user, int offset) {
+	public static GitHubCommits getCommits(String url, String secret, String branch, int offset) {
 
 		String api = "/commits";
-		String apiparams = "?author=" + user + "&per_page=100&page=" + offset;
+		String apiparams = "?sha=" + branch + "&per_page=100&page=" + offset;
 		String urlCall = url + api + apiparams;
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");
@@ -134,9 +153,9 @@ public class GithubApi {
 	}
 
 	public static void main(String[] args) {
-		GitHubCommits ri = getCommits("https://api.github.com/repos/q-rapids/qrapids-dashboard","HsdhNpJXdhpgpd7bkJtB", "alejandravv" ,1);
-		for (Commit a: ri.commits) {
-			System.out.println(a.committer.login + " " + a.commit.author.date + " " + a.commit.message);
+		GitHubBranches ri = getBranches("https://api.github.com/repos/kigrup/asw-hackernews","",1);
+		for (Branch a: ri.branches) {
+			System.out.println(a.name);
 		}
 
 	}
