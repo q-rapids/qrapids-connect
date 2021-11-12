@@ -190,10 +190,15 @@ public class GithubSourceTask extends SourceTask {
 				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
 			}
 
-			log.info("COMMITS: Obtaining commit stats");
+			log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits" + (commitsSet.size() > 15 ? "(this may take a little while)":""));
+			int cont = 1;
 			for (Commit c :commitsSet) {
+				if(cont % 20 == 0) log.info("COMMITS: Obtained commit stats for " + cont + " commits");
 				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
+				++cont;
 			}
+
+			log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
 			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 

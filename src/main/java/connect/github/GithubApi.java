@@ -129,24 +129,39 @@ public class GithubApi {
 	// Returns all commits made by a user
 	public static GitHubCommits getCommits(String url, String secret, String branch, int offset) {
 
-		String api = "/commits";
-		String apiparams = "?sha=" + branch + "&per_page=100&page=" + offset;
-		String urlCall = url + api + apiparams;
-		RESTInvoker ri = new RESTInvoker(urlCall, secret);
-		String json = ri.getDataFromServer("");
-		Commit[] commits = gson.fromJson(json, Commit[].class);
+		try {
+			String api = "/commits";
+			String apiparams = "?sha=" + branch + "&per_page=100&page=" + offset;
+			String urlCall = url + api + apiparams;
+			RESTInvoker ri = new RESTInvoker(urlCall, secret);
+			String json = ri.getDataFromServer("");
+			Commit[] commits = gson.fromJson(json, Commit[].class);
 
-		GitHubCommits gcommit = new GitHubCommits();
-		gcommit.commits = commits;
-		gcommit.total_count = (long) commits.length;
-		gcommit.offset = (long) offset;
-		return gcommit;
+			GitHubCommits gcommit = new GitHubCommits();
+			gcommit.commits = commits;
+			gcommit.total_count = (long) commits.length;
+			gcommit.offset = (long) offset;
+			return gcommit;
+
+		}catch (RuntimeException e){
+			System.out.println("COMMITS: Commit API error in branch " + branch);
+			System.out.println(e.getMessage());
+
+			GitHubCommits gcommit = new GitHubCommits();
+			gcommit.commits = new Commit[]{};
+			gcommit.total_count = (long) 0;
+			gcommit.offset = (long) offset;
+			return gcommit;
+		}
 	}
 
 	public static CommitStats getCommitInfo(String url, String secret, String commitSha) {
 		String api = "/commits";
 		String apiparams = "/" + commitSha;
 		String urlCall = url + api + apiparams;
+
+		//System.out.println(urlCall);
+
 		RESTInvoker ri = new RESTInvoker(urlCall, secret);
 		String json = ri.getDataFromServer("");
 		return gson.fromJson(json, CommitStats.class);
@@ -155,8 +170,10 @@ public class GithubApi {
 
 
 	public static void main(String[] args) {
-		CommitStats ri = getCommitInfo("https://api.github.com/repos/lorenamiralles/ProyectoASW","", "aff3a546f71a1761e9010f959080d04e433df40a");
-		System.out.println(ri.stats.total + " " + ri.stats.additions);
+		GitHubCommits ri = getCommits("https://api.github.com/repos/lorenamiralles/ProyectoASW","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", "13_Gestión_Usuarios", 1);
+		for(Commit c : ri.commits){
+			System.out.println(c.author.login);
+		}
 	}
 	
 }
