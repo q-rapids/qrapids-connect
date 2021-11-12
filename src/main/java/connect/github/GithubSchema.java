@@ -48,6 +48,9 @@ public class GithubSchema {
 	public static String FIELD_GITHUB_COMMIT_REPO = "repository";
 	public static String FIELD_GITHUB_COMMIT_DATE = "date";
 	public static String FIELD_GITHUB_COMMIT_MESSAGE = "message";
+	public static String FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT = "message_char_count";
+	public static String FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT = "message_word_count";
+	public static String FIELD_GITHUB_COMMIT_CONTAINS_TASK = "task_is_written";
 	public static String FIELD_GITHUB_COMMIT_VERIFIED = "verified";
 	public static String FIELD_GITHUB_COMMIT_REASON = "verified_reason";
 	public static String FIELD_GITHUB_COMMIT_STATS = "stats";
@@ -102,6 +105,7 @@ public class GithubSchema {
 			.field(FIELD_GITHUB_STATS_DEL, Schema.OPTIONAL_INT64_SCHEMA)
 			.build();
 
+
 	public static Schema githubCommit = SchemaBuilder.struct().name("commit")
 		.field(FIELD_GITHUB_COMMIT_SHA, Schema.STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_URL, Schema.OPTIONAL_STRING_SCHEMA)
@@ -109,6 +113,9 @@ public class GithubSchema {
 		.field(FIELD_GITHUB_COMMIT_REPO, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_DATE, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_MESSAGE, Schema.OPTIONAL_STRING_SCHEMA)
+		.field(FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, Schema.OPTIONAL_INT64_SCHEMA)
+		.field(FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, Schema.OPTIONAL_INT64_SCHEMA)
+		.field(FIELD_GITHUB_COMMIT_CONTAINS_TASK, Schema.OPTIONAL_BOOLEAN_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_VERIFIED, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_REASON, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_COMMIT_STATS, githubStats)
