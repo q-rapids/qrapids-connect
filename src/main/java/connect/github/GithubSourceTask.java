@@ -166,6 +166,7 @@ public class GithubSourceTask extends SourceTask {
 
 				do {
 					String branchName = b.name;
+
 					commit = GithubApi.getCommits(url, githubSecret, branchName, commit_offset++);
 					log.info("COMMITS: Obtained " + commit.total_count + " commits from branch " + b.name + " with page " + (commit_offset - 1));
 
@@ -187,6 +188,11 @@ public class GithubSourceTask extends SourceTask {
 				} while (commit.total_count == 100);
 
 				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
+			}
+
+			log.info("COMMITS: Obtaining commit stats");
+			for (Commit c :commitsSet) {
+				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
 			}
 
 			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));

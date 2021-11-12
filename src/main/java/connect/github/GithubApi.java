@@ -136,15 +136,6 @@ public class GithubApi {
 		String json = ri.getDataFromServer("");
 		Commit[] commits = gson.fromJson(json, Commit[].class);
 
-		for (Commit c: commits) {
-			apiparams = "/" + c.sha;
-			urlCall = url + api + apiparams;
-			ri = new RESTInvoker(urlCall, secret);
-			json = ri.getDataFromServer("");
-			CommitStats stats = gson.fromJson(json, CommitStats.class);
-			c.stats = stats.stats;
-		}
-
 		GitHubCommits gcommit = new GitHubCommits();
 		gcommit.commits = commits;
 		gcommit.total_count = (long) commits.length;
@@ -152,12 +143,20 @@ public class GithubApi {
 		return gcommit;
 	}
 
-	public static void main(String[] args) {
-		GitHubBranches ri = getBranches("https://api.github.com/repos/kigrup/asw-hackernews","",1);
-		for (Branch a: ri.branches) {
-			System.out.println(a.name);
-		}
+	public static CommitStats getCommitInfo(String url, String secret, String commitSha) {
+		String api = "/commits";
+		String apiparams = "/" + commitSha;
+		String urlCall = url + api + apiparams;
+		RESTInvoker ri = new RESTInvoker(urlCall, secret);
+		String json = ri.getDataFromServer("");
+		return gson.fromJson(json, CommitStats.class);
+	}
 
+
+
+	public static void main(String[] args) {
+		CommitStats ri = getCommitInfo("https://api.github.com/repos/lorenamiralles/ProyectoASW","", "aff3a546f71a1761e9010f959080d04e433df40a");
+		System.out.println(ri.stats.total + " " + ri.stats.additions);
 	}
 	
 }
