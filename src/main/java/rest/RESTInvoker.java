@@ -11,6 +11,8 @@ import org.apache.commons.codec.binary.Base64;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -29,6 +31,7 @@ public class RESTInvoker {
     private final String baseUrl;
     private final String username;
     private final String password;
+    private String refresh = null;
     private String secret = null;
  
     public RESTInvoker(String baseUrl, String username, String password) {
@@ -43,6 +46,11 @@ public class RESTInvoker {
     	this.secret = secret;	
     }
 
+    public RESTInvoker(String baseUrl, String secret ,boolean r) {
+        this(baseUrl,"","");
+        this.refresh = refresh;
+    }
+
     
     public String getDataFromServer(String path) {
         StringBuilder sb = new StringBuilder();
@@ -53,8 +61,13 @@ public class RESTInvoker {
 
             URLConnection urlConnection = setUsernamePassword(url);
             urlConnection.setRequestProperty("x-disable-pagination","True");
+            if(refresh != null) {
+
+            }
             if(secret != null){
-        		urlConnection.setRequestProperty("PRIVATE-TOKEN",secret);
+                //old -> urlConnection.setRequestProperty("PRIVATE-TOKEN",secret);
+                //changed for taiga connection
+        		urlConnection.setRequestProperty("Authorization", "Bearer " + secret);
         	}
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
@@ -70,7 +83,34 @@ public class RESTInvoker {
             throw new RuntimeException(e);
         }
     }
- 
+    public String restlogin(String burl, String name, String password)  {
+        StringBuilder sb = new StringBuilder();
+        try {
+            URL url = new URL(burl);
+            HttpURLConnection h = (HttpURLConnection) url.openConnection();
+            h.setRequestMethod("POST");
+            h.setRequestProperty("Content-Type", "application/json");
+            h.setDoOutput(true);
+            String json = "{\r\n    \"password\" : \""+password+"\",\r\n    \"type\" : \"normal\",\r\n    \"username\" : \""+name+"\"\r\n}";
+            byte[] input = json.getBytes();
+            OutputStream oc = h.getOutputStream();
+            oc.write(input);
+            h.connect();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(h.getInputStream()));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+
+            return sb.toString();
+        }   catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private URLConnection setUsernamePassword(URL url) throws IOException {
         URLConnection urlConnection = url.openConnection();
         if ( username != null && ! username.isEmpty() ) {

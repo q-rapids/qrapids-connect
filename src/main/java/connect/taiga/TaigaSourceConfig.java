@@ -23,6 +23,14 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final String TAIGA_PASS_CONFIG_DISPLAY = "Password";
     public static final String TAIGA_PASS_CONFIG_DOC = "Password to connect to taiga.";
 
+    public static final String TAIGA_TOKEN_CONFIG = "token";
+    public static final String TAIGA_TOKEN_CONFIG_DISPLAY = "taiga token";
+    public static final String TAIGA_TOKEN_CONFIG_DOC = "token to use when connecting taiga.";
+
+    public static final String TAIGA_REFRESH_CONFIG = "refresh";
+    public static final String TAIGA_REFRESH_CONFIG_DISPLAY = "taiga refresh";
+    public static final String TAIGA_REFRESH_CONFIG_DOC = "token to refresh the taiga token.";
+
     public static final String TAIGA_SLUG_CONFIG = "slug";
     public static final String TAIGA_SLUG_CONFIG_DISPLAY = "taiga project slug";
     public static final String TAIGA_SLUG_CONFIG_DOC = "Slug of the wanted project";
@@ -57,7 +65,9 @@ public class TaigaSourceConfig extends AbstractConfig {
                 .define(TAIGA_SLUG_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_SLUG_CONFIG_DOC, TAIGA_GROUP, 3, ConfigDef.Width.MEDIUM, TAIGA_SLUG_CONFIG_DISPLAY)
                 .define(TAIGA_ISSUE_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_ISSUE_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_ISSUE_TOPIC_CONFIG_DOC, TAIGA_GROUP, 5, ConfigDef.Width.MEDIUM, TAIGA_ISSUE_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_INTERVAL_SECONDS_CONFIG, ConfigDef.Type.LONG, TAIGA_INTERVAL_SECONDS_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_INTERVAL_SECONDS_CONFIG_DOC, TAIGA_GROUP, 6, ConfigDef.Width.SHORT,  TAIGA_INTERVAL_SECONDS_CONFIG_DISPLAY)
-                .define(TAIGA_METRIC_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_METRIC_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_METRIC_TOPIC_CONFIG_DOC, TAIGA_GROUP, 7, ConfigDef.Width.MEDIUM, TAIGA_METRIC_TOPIC_CONFIG_DISPLAY);
+                .define(TAIGA_METRIC_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_METRIC_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_METRIC_TOPIC_CONFIG_DOC, TAIGA_GROUP, 7, ConfigDef.Width.MEDIUM, TAIGA_METRIC_TOPIC_CONFIG_DISPLAY)
+                .define(TAIGA_TOKEN_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TOKEN_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_TOKEN_CONFIG_DISPLAY)
+                .define(TAIGA_REFRESH_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_REFRESH_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_REFRESH_CONFIG_DISPLAY);
     }
 
     public TaigaSourceConfig(Map<String, String> originals) { super(DEFS, originals); }

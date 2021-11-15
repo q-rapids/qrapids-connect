@@ -9,10 +9,10 @@ public class TaigaApi {
 
     private static Gson  gson = new Gson();
 
-    public static Issue[] getIssuesByProjectId(String url, String projectId, String name, String password) {
+    public static Issue[] getIssuesByProjectId(String url, String projectId, String token) {
         //Request of the project's issues
 
-        RESTInvoker ri = new RESTInvoker(url+"/issues?project="+projectId, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/issues?project="+projectId, token);
         String json = ri.getDataFromServer("");
         model.taiga.Issue[] iss = gson.fromJson(json, model.taiga.Issue[].class);
         /*for(model.taiga.Issue i : iss) {
@@ -23,10 +23,10 @@ public class TaigaApi {
         return iss;
     }
 
-    public static UserStory[] getUserStroriesByProjectId(String url, String projectId, String name, String password) {
+    public static UserStory[] getUserStroriesByProjectId(String url, String projectId, String token) {
         //Request of the project's user stories
 
-        RESTInvoker ri = new RESTInvoker(url+"/userstories?project="+projectId, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/userstories?project="+projectId, token);
         String json = ri.getDataFromServer("");
         model.taiga.UserStory[] us = gson.fromJson(json, model.taiga.UserStory[].class);
         /*for(model.taiga.UserStory u : us) {
@@ -41,10 +41,10 @@ public class TaigaApi {
         }*/
         return us;
     }
-    public static Milestone[] getMilestonesByProjectId(String url, String projectId, String name, String password) {
+    public static Milestone[] getMilestonesByProjectId(String url, String projectId, String token) {
         //Request of the project's epics
 
-        RESTInvoker ri = new RESTInvoker(url+"/milestones?project="+projectId, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/milestones?project="+projectId, token);
         String json = ri.getDataFromServer("");
         model.taiga.Milestone[] mil = gson.fromJson(json, model.taiga.Milestone[].class);
         /*for(model.taiga.Milestone m : mil) {
@@ -58,15 +58,14 @@ public class TaigaApi {
             System.out.println(m.estimated_start);
             System.out.println(m.created_date);
             System.out.println(m.modified_date);
-
         }*/
         return mil;
     }
 
-    public static Task[] getTasks(String url, String projectId, String name, String password) {
+    public static Task[] getTasks(String url, String projectId, String token) {
         //Request of the project's tasks. Tasks can be from a project, milestone or user story
 
-        RESTInvoker ri = new RESTInvoker(url+"/tasks?project="+projectId, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/tasks?project="+projectId, token);
         String json = ri.getDataFromServer("");
         model.taiga.Task[] task = gson.fromJson(json, model.taiga.Task[].class);
         /*for(model.taiga.Task t : task) {
@@ -78,35 +77,33 @@ public class TaigaApi {
         return task;
     }
 
-    public static Epic[] getEpicsByProjectID(String url, String projectId, String name, String password) {
+    public static Epic[] getEpicsByProjectID(String url, String projectId, String token) {
         //Request of the project's epics
 
-        RESTInvoker ri = new RESTInvoker(url+"/epics?project="+projectId, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/epics?project="+projectId,token);
         String json = ri.getDataFromServer("");
         model.taiga.Epic[] ep = gson.fromJson(json, model.taiga.Epic[].class);
         /*for(model.taiga.Epic e : ep) {
             System.out.println(e.id);
             System.out.println(e.subject);
-
-
         }*/
         return ep;
     }
 
-    public static Integer getProjectId(String url, String slug, String name, String password) {
-        RESTInvoker ri = new RESTInvoker(url + "/projects/by_slug?slug=" + slug, name, password);
+    public static Integer getProjectId(String url, String slug, String token) {
+        RESTInvoker ri = new RESTInvoker(url + "/projects/by_slug?slug=" + slug,token);
         String json = ri.getDataFromServer("");
         model.taiga.Project pr = gson.fromJson(json, model.taiga.Project.class);
         return pr.id;
     }
 
-    public static Project getProject(String url, String id, String name, String password) {
+    public static Project getProject(String url, String id, String token) {
 
-        RESTInvoker ri = new RESTInvoker(url+"/projects/"+id, name, password);
+        RESTInvoker ri = new RESTInvoker(url+"/projects/"+id, token);
         String json = ri.getDataFromServer("");
         model.taiga.Project pr = gson.fromJson(json, model.taiga.Project.class);
         //Request of other project stats
-        RESTInvoker ri2 = new RESTInvoker(url+"/projects/"+id+"/stats", name, password);
+        RESTInvoker ri2 = new RESTInvoker(url+"/projects/"+id+"/stats", token);
         String json2 = ri2.getDataFromServer("");
         model.taiga.Project pr2 = gson.fromJson(json2, model.taiga.Project.class);
         pr.closed_points=pr2.closed_points;
@@ -116,9 +113,23 @@ public class TaigaApi {
 
     }
 
+    public static String Login(String url, String name, String password) {
+        RESTInvoker ri = new RESTInvoker(url+"/auth", name, password);
+        String json=ri.restlogin(url+"/auth", name, password);
+        model.taiga.User u = gson.fromJson(json, model.taiga.User.class);
+        return u.auth_token;
+    }
+
     public static void main(String[] args) {
+
+        RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
+        String json = ri.restlogin("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
+        model.taiga.User u = gson.fromJson(json, model.taiga.User.class);
+        System.out.println(u.username);
+        System.out.println(u.auth_token);
+        System.out.println(getProjectId("https://api.taiga.io/api/v1","aleixlinares-test", u.auth_token));
         //Request of a project
-        System.out.println("Projecte Eventic");
+       /* System.out.println("Projecte Eventic");
         RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/projects/by_slug?slug=csansoon-eventic", "Aleix Linares", "rfc.185,ws");
         String json = ri.getDataFromServer("");
         model.taiga.Project pr = gson.fromJson(json, model.taiga.Project.class);
@@ -129,12 +140,12 @@ public class TaigaApi {
         pr.closed_points=pr2.closed_points;
         pr.defined_points=pr2.defined_points;
         pr.total_points=pr2.total_points;
-
+        */
         //pr.issues = getIssuesByProjectId("https://api.taiga.io/api/v1/issues", "399143", "Taiga Username", "Taiga Password");
-        pr.userStories = getUserStroriesByProjectId("https://api.taiga.io/api/v1/userstories", "399143", "Aleix Linares", "rfc.185,ws");
+        //pr.userStories = getUserStroriesByProjectId("https://api.taiga.io/api/v1/userstories", "399143", "Aleix Linares", "rfc.185,ws");
         //pr.milestones = getMilestonesByProjectId("https://api.taiga.io/api/v1/milestones", "399143", "Taiga Username", "Taiga Password");
         //getTasks("https://api.taiga.io/api/v1/tasks", "399143", "Taiga Username", "Taiga Password");
-        pr.epics = getEpicsByProjectID("https://api.taiga.io/api/v1/epics", "399143", "Aleix Linares", "rfc.185,ws");
+        //pr.epics = getEpicsByProjectID("https://api.taiga.io/api/v1/epics", "399143", "Aleix Linares", "rfc.185,ws");
     }
 
 

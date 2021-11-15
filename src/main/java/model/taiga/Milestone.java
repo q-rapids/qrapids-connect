@@ -5,8 +5,8 @@ import java.util.Date;
 public class Milestone {
 
     public Boolean closed;
-    public Integer closed_points;
-    public Integer total_points;
+    public Float closed_points;
+    public Float total_points;
     public Integer id;
     public String name;
     public String slug;

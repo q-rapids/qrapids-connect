@@ -8,7 +8,7 @@ public class UserStory {
     public Integer id;
     public Boolean is_closed;
     public Integer status;
-    public Integer total_points;
+    public Float total_points;
     public Integer milestone;
     public Epic[] epics;
     public String milestone_name;

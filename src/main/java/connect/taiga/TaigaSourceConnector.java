@@ -19,6 +19,8 @@ public class TaigaSourceConnector extends SourceConnector{
     private String taigaSlug;
     private String taigaUser;
     private String taigaPass;
+    private String taigaToken;
+    private String taigaRefresh;
     private String taigaIssueTopic;
     private String taigaMetricTopic;
     private String taigaInterval;
@@ -37,6 +39,8 @@ public class TaigaSourceConnector extends SourceConnector{
         taigaSlug = props.get( TaigaSourceConfig.TAIGA_SLUG_CONFIG);
         taigaUser = props.get( TaigaSourceConfig.TAIGA_USER_CONFIG );
         taigaPass = props.get( TaigaSourceConfig.TAIGA_PASS_CONFIG );
+        taigaToken = props.get( TaigaSourceConfig.TAIGA_TOKEN_CONFIG );
+        taigaRefresh = props.get( TaigaSourceConfig.TAIGA_REFRESH_CONFIG );
         taigaIssueTopic = props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG );
         taigaMetricTopic = props.get( TaigaSourceConfig.TAIGA_METRIC_TOPIC_CONFIG );
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG );
@@ -61,6 +65,8 @@ public class TaigaSourceConnector extends SourceConnector{
         config.put( TaigaSourceConfig.TAIGA_SLUG_CONFIG, taigaSlug );
         config.put( TaigaSourceConfig.TAIGA_USER_CONFIG, taigaUser );
         config.put( TaigaSourceConfig.TAIGA_PASS_CONFIG, taigaPass );
+        config.put( TaigaSourceConfig.TAIGA_TOKEN_CONFIG, taigaToken );
+        config.put( TaigaSourceConfig.TAIGA_REFRESH_CONFIG, taigaRefresh );
         config.put( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG, taigaIssueTopic );
         config.put( TaigaSourceConfig.TAIGA_METRIC_TOPIC_CONFIG, taigaMetricTopic );
         config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, "" + taigaInterval);
