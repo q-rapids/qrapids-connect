@@ -36,6 +36,7 @@ public class TaigaSchema {
     public static String FIELD_TAIGA_US_FINISHED_DATE = "finished_date";
     public static String FIELD_TAIGA_US_TASKS = "user_story_tasks";
     public static String FIELD_TAIGA_US_MILESTONES = "milestones";
+    public static String FIELD_TAIGA_US_EPIC_ID = "epic_id";
 
     //TASK
     public static String FIELD_TAIGA_TASK_SUBJECT = "subject";
@@ -46,6 +47,7 @@ public class TaigaSchema {
     public static String FIELD_TAIGA_TASK_CREATED_DATE = "created_date";
     public static String FIELD_TAIGA_TASK_MODIFIED_DATE = "modified_date";
     public static String FIELD_TAIGA_TASK_FINISHED_DATE = "finished_date";
+    public static String FIELD_TAIGA_TASK_USERSTORY_ID= "user_story_id";
 
     //MIELSTONE
     public static String FIELD_TAIGA_MILESTONE_ID = "id";
@@ -92,6 +94,7 @@ public class TaigaSchema {
 
             .field("subject" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("id" ,Schema.OPTIONAL_INT32_SCHEMA)
+            .field("user_story_id" ,Schema.OPTIONAL_INT32_SCHEMA)
             .field("is_closed" ,Schema.OPTIONAL_BOOLEAN_SCHEMA)
             .field("status" ,Schema.OPTIONAL_STRING_SCHEMA )
             .field("assigned" ,Schema.OPTIONAL_STRING_SCHEMA )
@@ -117,6 +120,7 @@ public class TaigaSchema {
 
             .field("subject" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("id" ,Schema.OPTIONAL_INT32_SCHEMA)
+            .field("epic_id" ,Schema.OPTIONAL_INT32_SCHEMA)
             .field("is_closed" ,Schema.OPTIONAL_BOOLEAN_SCHEMA)
             .field("status" ,Schema.OPTIONAL_STRING_SCHEMA )
             .field("assigned" ,Schema.OPTIONAL_STRING_SCHEMA )
@@ -133,8 +137,9 @@ public class TaigaSchema {
             .field("milestone_modified_date" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("estimated_start" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("estimated_finish" ,Schema.OPTIONAL_STRING_SCHEMA)
-            .field("tasks", SchemaBuilder.array(taigaTask).build())
             .build();
+            //.field("tasks", SchemaBuilder.array(taigaTask).build())
+
     //.field("milestones" , SchemaBuilder.array(taigaMilestone).build())
 
     public static Schema taigaEpic = SchemaBuilder.struct().name("taigaepic")
@@ -147,7 +152,8 @@ public class TaigaSchema {
             .field(FIELD_TAIGA_EPIC_TOTAL ,Schema.OPTIONAL_FLOAT32_SCHEMA)
             .field(FIELD_TAIGA_EPIC_CREATED_DATE ,Schema.OPTIONAL_STRING_SCHEMA)
             .field(FIELD_TAIGA_EPIC_MODIFIED_DATE ,Schema.OPTIONAL_STRING_SCHEMA )
-            .field(FIELD_TAIGA_EPIC_USER_STORIES , SchemaBuilder.array(taigaUserStory).build())
             .build();
+            //.field(FIELD_TAIGA_EPIC_USER_STORIES , SchemaBuilder.array(taigaUserStory).build())
+
 
 }

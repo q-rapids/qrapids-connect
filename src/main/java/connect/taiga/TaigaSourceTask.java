@@ -34,7 +34,9 @@ public class TaigaSourceTask extends SourceTask{
     //private String taigaRefresh;
     private String taigaProjectId;
     private String issuetopic;
-    private String metrictopic;
+    private String epictopic;
+    private String userstorytopic;
+    private String tasktopic;
     private String taigaInterval;
     private Integer interval;
 
@@ -124,7 +126,11 @@ public class TaigaSourceTask extends SourceTask{
             myTasks = TaigaApi.getTasks(taigaUrl, taigaProjectId,taigaToken);
             myMilestones = TaigaApi.getMilestonesByProjectId(taigaUrl, taigaProjectId, taigaToken);
 
-            records.addAll( getTaigaMetrics(myEpics, myUserStories, myTasks, myMilestones));
+            //records.addAll( getTaigaMetrics(myEpics, myUserStories, myTasks, myMilestones));
+            records.addAll( getTaigaEpics(myEpics));
+            records.addAll( getTaigaUserStories( myUserStories, myMilestones));
+            records.addAll( getTaigaTasks(myTasks));
+
             break;
         } while (true);
 
@@ -134,239 +140,130 @@ public class TaigaSourceTask extends SourceTask{
         return records;
     }
 
-    private List<SourceRecord> getTaigaMetrics(Epic[] epics, UserStory[] us, Task[] tasks, Milestone[] milestones) {
-
+    private List<SourceRecord> getTaigaTasks(Task[] tasks) {
         List<SourceRecord> result = new ArrayList<>();
-        Boolean UserStoriesWithoutEpic=false, TasksWithoutUserStories=false;
-        if(epics.length==0){
-            UserStoriesWithoutEpic=true;
-        }
-        if(us.length==0) {
-            TasksWithoutUserStories=true;
-        }
-        Vector<Struct> userstories;
-        Vector<Struct> task;
-        for ( Epic e : epics) {
 
-            log.info("EPIC ID: " + e.id);
-            log.info("EPIC URL: " + taigaUrl+"/epics/"+e.id);
+        Struct tasktemp;
+        for ( Task t : tasks) {
+            log.info("TASK ID: " + t.id);
+            log.info("TASK URL: " + taigaUrl + "/task/" + t.id);
 
-            Struct struct = new Struct( TaigaSchema.taigaEpic);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_ID, e.id);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_SUBJECT, e.subject);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_STATUS, e.status_extra_info.name);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_IS_CLOSED, e.is_closed);
-            if(e.user_stories_counts!=null) {
-                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_PROGRESS, e.user_stories_counts.progress);
-                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_TOTAL, e.user_stories_counts.total);
-            }
-            if(e.created_date!=null) struct.put( TaigaSchema.FIELD_TAIGA_EPIC_CREATED_DATE, dfZULU.format(e.created_date));
-            if(e.modified_date!=null) struct.put( TaigaSchema.FIELD_TAIGA_EPIC_MODIFIED_DATE, dfZULU.format(e.modified_date));
-
-            userstories = new Vector<Struct>();
-
-            for(int x = 0; x < us.length; ++x){
-                if(us[x].epics!=null) {
-                    if (us[x].epics[0].id.equals(e.id)) {
-                        Struct ustemp = new Struct(TaigaSchema.taigaUserStory);
-                        ustemp.put("subject", us[x].subject);
-                        ustemp.put("id", us[x].id);
-                        ustemp.put("status", us[x].status_extra_info.name);
-                        ustemp.put("is_closed", us[x].is_closed);
-                        if(us[x].assigned_to_extra_info!=null)ustemp.put("assigned", us[x].assigned_to_extra_info.username);
-                        ustemp.put("created_date", dfZULU.format(us[x].created_date));
-                        if(us[x].modified_date!=null)ustemp.put("modified_date", dfZULU.format(us[x].modified_date));
-                        if(us[x].finish_date!=null)ustemp.put("finished_date", dfZULU.format(us[x].finish_date));
-                        ustemp.put("total_points", us[x].total_points);
-                        for(int y=0; y< milestones.length; ++y) {
-                            if(us[x].milestone!=null) {
-                                if(us[x].milestone.equals(milestones[y].id)) {
-                                    ustemp.put("milestone_id", milestones[y].id);
-                                    ustemp.put("milestone_name", milestones[y].name);
-                                    ustemp.put("milestone_closed_points", milestones[y].closed_points);
-                                    ustemp.put("milestone_total_points", milestones[y].total_points);
-                                    ustemp.put("milestone_closed", milestones[y].closed);
-                                    ustemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
-                                    if(milestones[y].modified_date!=null)ustemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
-                                    if(milestones[y].estimated_start!=null)ustemp.put("estimated_start", dfZULU.format(milestones[y].estimated_start));
-                                    if(milestones[y].estimated_finish!=null)ustemp.put("estimated_finish", dfZULU.format(milestones[y].estimated_finish));
-                                }
-                            }
-                        }
-                        task = new Vector<Struct>();
-                        for(int y=0; y< tasks.length; ++y) {
-                            if (tasks[y].user_story != null) {
-                                if (tasks[y].user_story.equals(us[x].id)) {
-                                    Struct tasktemp = new Struct(TaigaSchema.taigaTask);
-                                    tasktemp.put("subject", tasks[y].subject);
-                                    tasktemp.put("id", tasks[y].id);
-                                    tasktemp.put("status", tasks[y].status_extra_info.name);
-                                    tasktemp.put("is_closed", tasks[y].is_closed);
-                                    if (tasks[y].assigned_to_extra_info != null)
-                                        tasktemp.put("assigned", tasks[y].assigned_to_extra_info.username);
-                                    tasktemp.put("created_date", dfZULU.format(tasks[y].created_date));
-                                    if (tasks[y].modified_date != null)
-                                        tasktemp.put("modified_date", dfZULU.format(tasks[y].modified_date));
-                                    if (tasks[y].finished_date != null)
-                                        tasktemp.put("finished_date", dfZULU.format(tasks[y].finished_date));
-                                    task.add(tasktemp);
-                                }
-                            }
-                            else {
-                                TasksWithoutUserStories=true;
-                            }
-                        }
-                        ustemp.put("tasks", task);
-                        //TASK I MILESTONES
-                        userstories.add(ustemp);
-                    }
-                }
-                else {
-                    UserStoriesWithoutEpic=true;
-                }
-               /*
-            */
-            }
+            tasktemp = new Struct(TaigaSchema.taigaTask);
+            tasktemp.put("subject", t.subject);
+            if(t.user_story!=null) tasktemp.put("user_story_id", t.user_story);
+            tasktemp.put("id", t.id);
+            tasktemp.put("status", t.status_extra_info.name);
+            tasktemp.put("is_closed", t.is_closed);
+            if (t.assigned_to_extra_info != null)
+                tasktemp.put("assigned", t.assigned_to_extra_info.username);
+            tasktemp.put("created_date", dfZULU.format(t.created_date));
+            if (t.modified_date != null)
+                tasktemp.put("modified_date", dfZULU.format(t.modified_date));
+            if (t.finished_date != null)
+                tasktemp.put("finished_date", dfZULU.format(t.finished_date));
             //struct.put( "tasks", task);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_USER_STORIES, userstories);
 
-            Map<String,String> sourcePartition = new HashMap<>();
-            sourcePartition.put( "taigaUrl", taigaUrl );
+            Map<String, String> sourcePartition = new HashMap<>();
+            sourcePartition.put("taigaUrl", taigaUrl);
 
-            Map<String,String> sourceOffset = new HashMap<>();
-            sourceOffset.put( "updated",  dfZULU.format(e.modified_date) );
+            Map<String, String> sourceOffset = new HashMap<>();
+            sourceOffset.put("updated", dfZULU.format(t.modified_date));
 
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, metrictopic, Schema.STRING_SCHEMA, e.id.toString(), TaigaSchema.taigaEpic , struct);
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, tasktopic, Schema.STRING_SCHEMA, t.id.toString(), TaigaSchema.taigaTask, tasktemp);
             result.add(sr);
-
         }
-
-        if(UserStoriesWithoutEpic) {
-            Struct struct = new Struct( TaigaSchema.taigaEpic);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_ID, 0);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_SUBJECT, "False Epic");
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_STATUS, "Open");
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_IS_CLOSED,false);
-            float falsePoints=1;
-            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_PROGRESS, falsePoints);
-            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_TOTAL, falsePoints);
-            String falseDate ="2000-01-01";
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_CREATED_DATE, null);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_MODIFIED_DATE, null);
-            userstories = new Vector<Struct>();
-            for(int x = 0; x < us.length; ++x){
-                if(us[x].epics==null) {
-                    Struct ustemp = new Struct(TaigaSchema.taigaUserStory);
-                    ustemp.put("subject", us[x].subject);
-                    ustemp.put("id", us[x].id);
-                    ustemp.put("status", us[x].status_extra_info.name);
-                    ustemp.put("is_closed", us[x].is_closed);
-                    if(us[x].assigned_to_extra_info!=null)ustemp.put("assigned", us[x].assigned_to_extra_info.username);
-                    ustemp.put("created_date", dfZULU.format(us[x].created_date));
-                    if(us[x].modified_date!=null)ustemp.put("modified_date", dfZULU.format(us[x].modified_date));
-                    if(us[x].finish_date!=null)ustemp.put("finished_date", dfZULU.format(us[x].finish_date));
-                    ustemp.put("total_points", us[x].total_points);
-                    for(int y=0; y< milestones.length; ++y) {
-                        if(us[x].milestone!=null) {
-                            if(us[x].milestone.equals(milestones[y].id)) {
-                                ustemp.put("milestone_id", milestones[y].id);
-                                ustemp.put("milestone_name", milestones[y].name);
-                                ustemp.put("milestone_closed_points", milestones[y].closed_points);
-                                ustemp.put("milestone_total_points", milestones[y].total_points);
-                                ustemp.put("milestone_closed", milestones[y].closed);
-                                ustemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
-                                if(milestones[y].modified_date!=null)ustemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
-                                if(milestones[y].estimated_start!=null)ustemp.put("estimated_start", dfZULU.format(milestones[y].estimated_start));
-                                if(milestones[y].estimated_finish!=null)ustemp.put("estimated_finish", dfZULU.format(milestones[y].estimated_finish));
-                            }
-                        }
-                    }
-                    task = new Vector<Struct>();
-                    for(int y=0; y< tasks.length; ++y) {
-                        if (tasks[y].user_story != null) {
-                            if (tasks[y].user_story.equals(us[x].id)) {
-                                Struct tasktemp = new Struct(TaigaSchema.taigaTask);
-                                tasktemp.put("subject", tasks[y].subject);
-                                tasktemp.put("id", tasks[y].id);
-                                tasktemp.put("status", tasks[y].status_extra_info.name);
-                                tasktemp.put("is_closed", tasks[y].is_closed);
-                                if (tasks[y].assigned_to_extra_info != null)
-                                    tasktemp.put("assigned", tasks[y].assigned_to_extra_info.username);
-                                tasktemp.put("created_date", dfZULU.format(tasks[y].created_date));
-                                if (tasks[y].modified_date != null)
-                                    tasktemp.put("modified_date", dfZULU.format(tasks[y].modified_date));
-                                if (tasks[y].finished_date != null)
-                                    tasktemp.put("finished_date", dfZULU.format(tasks[y].finished_date));
-                                task.add(tasktemp);
-                            }
-                        }
-                    }
-                    ustemp.put("tasks", task);
-                    //TASK I MILESTONES
-                    userstories.add(ustemp);
-                }
-            }
-            if(TasksWithoutUserStories) {
-                Struct ustemp = new Struct(TaigaSchema.taigaUserStory);
-                ustemp.put("subject", "False User Story");
-                ustemp.put("id", 0);
-                ustemp.put("status", "Open");
-                ustemp.put("is_closed", false);
-                ustemp.put("assigned", null);
-                ustemp.put("created_date", null);
-                ustemp.put("modified_date", null);
-                ustemp.put("finished_date", null);
-                falsePoints=1;
-                ustemp.put("total_points", falsePoints);
-                ustemp.put("milestone_id", 0);
-                ustemp.put("milestone_name", "False Milestones");
-                ustemp.put("milestone_closed_points", falsePoints);
-                ustemp.put("milestone_total_points", falsePoints);
-                ustemp.put("milestone_closed", false);
-                ustemp.put("milestone_created_date", null);
-                ustemp.put("milestone_modified_date", null);
-                ustemp.put("estimated_start", null);
-                ustemp.put("estimated_finish", null);
-                task = new Vector<Struct>();
-                for(int y=0; y< tasks.length; ++y) {
-                    if (tasks[y].user_story == null) {
-                        Struct tasktemp = new Struct(TaigaSchema.taigaTask);
-                        tasktemp.put("subject", tasks[y].subject);
-                        tasktemp.put("id", tasks[y].id);
-                        tasktemp.put("status", tasks[y].status_extra_info.name);
-                        tasktemp.put("is_closed", tasks[y].is_closed);
-                        if (tasks[y].assigned_to_extra_info != null)
-                            tasktemp.put("assigned", tasks[y].assigned_to_extra_info.username);
-                        tasktemp.put("created_date", dfZULU.format(tasks[y].created_date));
-                        if (tasks[y].modified_date != null)
-                            tasktemp.put("modified_date", dfZULU.format(tasks[y].modified_date));
-                        if (tasks[y].finished_date != null)
-                            tasktemp.put("finished_date", dfZULU.format(tasks[y].finished_date));
-                        task.add(tasktemp);
-                    }
-                }
-                ustemp.put("tasks", task);
-                //TASK I MILESTONES
-                userstories.add(ustemp);
-            }
-            //struct.put( "tasks", task);
-            struct.put( TaigaSchema.FIELD_TAIGA_EPIC_USER_STORIES, userstories);
-
-            Map<String,String> sourcePartition = new HashMap<>();
-            sourcePartition.put( "taigaUrl", taigaUrl );
-
-            Map<String,String> sourceOffset = new HashMap<>();
-            sourceOffset.put( "updated",  null );
-
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, metrictopic, Schema.STRING_SCHEMA, 0, TaigaSchema.taigaEpic , struct);
-            result.add(sr);
-
-        }
-        log.info("Found " + result.size() + " issues.");
-
         return result;
     }
 
+    private List<SourceRecord> getTaigaUserStories(UserStory[] us, Milestone[] milestones) {
+        List<SourceRecord> result = new ArrayList<>();
+
+        Struct ustemp;
+        for(int x = 0; x < us.length; ++x){
+            log.info("US ID: " + us[x].id);
+            log.info("US URL: " + taigaUrl + "/userstory/" + us[x].id);
+
+            ustemp = new Struct(TaigaSchema.taigaUserStory);
+            ustemp.put("subject", us[x].subject);
+            if(us[x].epics!=null) ustemp.put("epic_id", us[x].epics[0].id);
+            ustemp.put("id", us[x].id);
+            ustemp.put("status", us[x].status_extra_info.name);
+            ustemp.put("is_closed", us[x].is_closed);
+            if(us[x].assigned_to_extra_info!=null)ustemp.put("assigned", us[x].assigned_to_extra_info.username);
+            ustemp.put("created_date", dfZULU.format(us[x].created_date));
+            if(us[x].modified_date!=null)ustemp.put("modified_date", dfZULU.format(us[x].modified_date));
+            if(us[x].finish_date!=null)ustemp.put("finished_date", dfZULU.format(us[x].finish_date));
+            ustemp.put("total_points", us[x].total_points);
+            for(int y=0; y< milestones.length; ++y) {
+                if (us[x].milestone != null) {
+                    if (us[x].milestone.equals(milestones[y].id)) {
+                        ustemp.put("milestone_id", milestones[y].id);
+                        ustemp.put("milestone_name", milestones[y].name);
+                        ustemp.put("milestone_closed_points", milestones[y].closed_points);
+                        ustemp.put("milestone_total_points", milestones[y].total_points);
+                        ustemp.put("milestone_closed", milestones[y].closed);
+                        ustemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
+                        if (milestones[y].modified_date != null)
+                            ustemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
+                        if (milestones[y].estimated_start != null)
+                            ustemp.put("estimated_start", dfZULU.format(milestones[y].estimated_start));
+                        if (milestones[y].estimated_finish != null)
+                            ustemp.put("estimated_finish", dfZULU.format(milestones[y].estimated_finish));
+                    }
+                }
+            }
+        //struct.put( "tasks", task);
+
+        Map<String,String> sourcePartition = new HashMap<>();
+        sourcePartition.put( "taigaUrl", taigaUrl );
+
+        Map<String,String> sourceOffset = new HashMap<>();
+        sourceOffset.put( "updated",  dfZULU.format(us[x].modified_date) );
+
+        SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, userstorytopic, Schema.STRING_SCHEMA, us[x].toString(), TaigaSchema.taigaUserStory , ustemp);
+        result.add(sr);
+        }
+        return result;
+    }
+
+
+    private List<SourceRecord> getTaigaEpics(Epic[] epics) {
+        List<SourceRecord> result = new ArrayList<>();
+
+        Struct struct;
+        for ( Epic e : epics) {
+
+            log.info("EPIC ID: " + e.id);
+            log.info("EPIC URL: " + taigaUrl + "/epics/" + e.id);
+
+            struct = new Struct(TaigaSchema.taigaEpic);
+            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_ID, e.id);
+            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_SUBJECT, e.subject);
+            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_STATUS, e.status_extra_info.name);
+            struct.put(TaigaSchema.FIELD_TAIGA_EPIC_IS_CLOSED, e.is_closed);
+            if (e.user_stories_counts != null) {
+                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_PROGRESS, e.user_stories_counts.progress);
+                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_TOTAL, e.user_stories_counts.total);
+            }
+            if (e.created_date != null)
+                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_CREATED_DATE, dfZULU.format(e.created_date));
+            if (e.modified_date != null)
+                struct.put(TaigaSchema.FIELD_TAIGA_EPIC_MODIFIED_DATE, dfZULU.format(e.modified_date));
+
+
+            //struct.put( "tasks", task);
+
+            Map<String, String> sourcePartition = new HashMap<>();
+            sourcePartition.put("taigaUrl", taigaUrl);
+
+            Map<String, String> sourceOffset = new HashMap<>();
+            sourceOffset.put("updated", dfZULU.format(e.modified_date));
+
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, epictopic, Schema.STRING_SCHEMA, e.id.toString(), TaigaSchema.taigaEpic, struct);
+            result.add(sr);
+        }
+        return result;
+    }
 
     private List<SourceRecord> getIssueSourceRecords(Issue[] redmineIssues, Date updatedSince, Project myProject) {
 
@@ -446,7 +343,9 @@ public class TaigaSourceTask extends SourceTask{
         taigaToken = TaigaApi.Login(taigaUrl, taigaUser, taigaPass);
         taigaProjectId = String.valueOf(TaigaApi.getProjectId(taigaUrl, taigaSlug, taigaToken));
         issuetopic = props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG);
-        metrictopic = props.get( TaigaSourceConfig.TAIGA_METRIC_TOPIC_CONFIG);
+        epictopic = props.get(TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG);
+        userstorytopic = props.get(TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG);
+        tasktopic = props.get(TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG);
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG);
 
 

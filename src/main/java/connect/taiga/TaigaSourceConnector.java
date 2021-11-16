@@ -23,6 +23,9 @@ public class TaigaSourceConnector extends SourceConnector{
     private String taigaRefresh;
     private String taigaIssueTopic;
     private String taigaMetricTopic;
+    private String taigaMetricEpic;
+    private String taigaMetricUserStory;
+    private String taigaMetricTask;
     private String taigaInterval;
 
     @Override
@@ -42,7 +45,9 @@ public class TaigaSourceConnector extends SourceConnector{
         taigaToken = props.get( TaigaSourceConfig.TAIGA_TOKEN_CONFIG );
         taigaRefresh = props.get( TaigaSourceConfig.TAIGA_REFRESH_CONFIG );
         taigaIssueTopic = props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG );
-        taigaMetricTopic = props.get( TaigaSourceConfig.TAIGA_METRIC_TOPIC_CONFIG );
+        taigaMetricEpic = props.get( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG );
+        taigaMetricUserStory = props.get( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG );
+        taigaMetricTask = props.get( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG );
 
         if ( taigaURL == null || taigaURL.isEmpty() )
@@ -68,7 +73,9 @@ public class TaigaSourceConnector extends SourceConnector{
         config.put( TaigaSourceConfig.TAIGA_TOKEN_CONFIG, taigaToken );
         config.put( TaigaSourceConfig.TAIGA_REFRESH_CONFIG, taigaRefresh );
         config.put( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG, taigaIssueTopic );
-        config.put( TaigaSourceConfig.TAIGA_METRIC_TOPIC_CONFIG, taigaMetricTopic );
+        config.put( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG, taigaMetricEpic );
+        config.put( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG, taigaMetricUserStory );
+        config.put( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG, taigaMetricTask );
         config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, "" + taigaInterval);
         configs.add(config);
         return configs;

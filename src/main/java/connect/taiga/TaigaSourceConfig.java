@@ -40,10 +40,20 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final String TAIGA_ISSUE_TOPIC_CONFIG_DOC = "Topic to persist taiga Issues.";
     public static final String TAIGA_ISSUE_TOPIC_CONFIG_DEFAULT = "taiga.issue.topic";
 
-    public static final String TAIGA_METRIC_TOPIC_CONFIG = "taiga.metric.topic";
-    public static final String TAIGA_METRIC_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga Issues.";
-    public static final String TAIGA_METRIC_TOPIC_CONFIG_DOC = "Topic to persist taiga Issues.";
-    public static final String TAIGA_METRIC_TOPIC_CONFIG_DEFAULT = "taiga.metric.topic";
+    public static final String TAIGA_EPIC_TOPIC_CONFIG = "taiga.epic.topic";
+    public static final String TAIGA_EPIC_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga epic.";
+    public static final String TAIGA_EPIC_TOPIC_CONFIG_DOC = "Topic to persist taiga epic.";
+    public static final String TAIGA_EPIC_TOPIC_CONFIG_DEFAULT = "taiga.metric.epic";
+
+    public static final String TAIGA_USERSTORY_TOPIC_CONFIG = "taiga.userstory.topic";
+    public static final String TAIGA_USERSTORY_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga userstory.";
+    public static final String TAIGA_USERSTORY_TOPIC_CONFIG_DOC = "Topic to persist taiga userstory.";
+    public static final String TAIGA_USERSTORY_TOPIC_CONFIG_DEFAULT = "taiga.metric.userstory";
+
+    public static final String TAIGA_TASK_TOPIC_CONFIG = "taiga.task.topic";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga task.";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DOC = "Topic to persist taiga task.";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DEFAULT = "taiga.metric.task";
 
 
     public static final String TAIGA_INTERVAL_SECONDS_CONFIG = "taiga.interval.seconds";
@@ -65,7 +75,9 @@ public class TaigaSourceConfig extends AbstractConfig {
                 .define(TAIGA_SLUG_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_SLUG_CONFIG_DOC, TAIGA_GROUP, 3, ConfigDef.Width.MEDIUM, TAIGA_SLUG_CONFIG_DISPLAY)
                 .define(TAIGA_ISSUE_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_ISSUE_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_ISSUE_TOPIC_CONFIG_DOC, TAIGA_GROUP, 5, ConfigDef.Width.MEDIUM, TAIGA_ISSUE_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_INTERVAL_SECONDS_CONFIG, ConfigDef.Type.LONG, TAIGA_INTERVAL_SECONDS_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_INTERVAL_SECONDS_CONFIG_DOC, TAIGA_GROUP, 6, ConfigDef.Width.SHORT,  TAIGA_INTERVAL_SECONDS_CONFIG_DISPLAY)
-                .define(TAIGA_METRIC_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_METRIC_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_METRIC_TOPIC_CONFIG_DOC, TAIGA_GROUP, 7, ConfigDef.Width.MEDIUM, TAIGA_METRIC_TOPIC_CONFIG_DISPLAY)
+                .define(TAIGA_EPIC_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_EPIC_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_EPIC_TOPIC_CONFIG_DOC, TAIGA_GROUP, 9, ConfigDef.Width.MEDIUM, TAIGA_EPIC_TOPIC_CONFIG_DISPLAY)
+                .define(TAIGA_USERSTORY_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_USERSTORY_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_USERSTORY_TOPIC_CONFIG_DOC, TAIGA_GROUP, 10, ConfigDef.Width.MEDIUM, TAIGA_USERSTORY_TOPIC_CONFIG_DISPLAY)
+                .define(TAIGA_TASK_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_TASK_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_TASK_TOPIC_CONFIG_DOC, TAIGA_GROUP, 11, ConfigDef.Width.MEDIUM, TAIGA_TASK_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_TOKEN_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TOKEN_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_TOKEN_CONFIG_DISPLAY)
                 .define(TAIGA_REFRESH_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_REFRESH_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_REFRESH_CONFIG_DISPLAY);
     }
