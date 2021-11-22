@@ -25,8 +25,10 @@ public class GithubSourceConnector extends SourceConnector {
 	
 	private Logger log = Logger.getLogger(GithubSourceConnector.class.getName());
 
-	private String githubURL;
-	private String githubSecret;
+	private String github_ASW_URL;
+	private String github_PES_URL;
+	private String github_ASW_Secret;
+	private String github_PES_Secret;
 	private String githubUser;
 	private String githubPass;	
 	private String githubIssuesTopic;
@@ -44,8 +46,10 @@ public class GithubSourceConnector extends SourceConnector {
 		
 		log.info(props.toString());
 
-		githubURL = props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
-		githubSecret = props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
+		github_ASW_URL = props.get( GithubSourceConfig.GITHUB_ASW_URL_CONFIG);
+		github_PES_URL = props.get( GithubSourceConfig.GITHUB_PES_URL_CONFIG);
+		github_ASW_Secret = props.get( GithubSourceConfig.GITHUB_ASW_SECRET_CONFIG);
+		github_PES_Secret = props.get( GithubSourceConfig.GITHUB_PES_SECRET_CONFIG);
 		githubUser = props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
 		githubPass = props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		githubIssuesTopic = props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
@@ -53,7 +57,7 @@ public class GithubSourceConnector extends SourceConnector {
 		githubInterval = props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 		githubCreatedSince = props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 
-		if ( githubURL == null || githubURL.isEmpty() )
+		if ( github_ASW_URL == null || github_ASW_URL.isEmpty() || github_PES_URL == null || github_PES_URL.isEmpty() )
 			throw new ConnectException("GithubSourceConnector configuration must include 'redmine.url' setting");
 
 	}
@@ -69,8 +73,10 @@ public class GithubSourceConnector extends SourceConnector {
 
 		Map<String, String> config = new HashMap<>();
 
-		config.put( GithubSourceConfig.GITHUB_URL_CONFIG, githubURL );
-		config.put( GithubSourceConfig.GITHUB_SECRET_CONFIG, githubSecret );
+		config.put( GithubSourceConfig.GITHUB_ASW_URL_CONFIG, github_ASW_URL );
+		config.put( GithubSourceConfig.GITHUB_PES_URL_CONFIG, github_PES_URL );
+		config.put( GithubSourceConfig.GITHUB_ASW_SECRET_CONFIG, github_ASW_Secret );
+		config.put( GithubSourceConfig.GITHUB_PES_SECRET_CONFIG, github_PES_Secret );
 		config.put( GithubSourceConfig.GITHUB_USER_CONFIG, githubUser );
 		config.put( GithubSourceConfig.GITHUB_PASS_CONFIG, githubPass );
 		config.put( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG, githubIssuesTopic );
