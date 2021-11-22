@@ -379,14 +379,8 @@ public class GithubSourceTask extends SourceTask {
 		String aswURL = props.get( GithubSourceConfig.GITHUB_ASW_URL_CONFIG);
 		String pesURL = props.get( GithubSourceConfig.GITHUB_PES_URL_CONFIG);
 
-		if(!aswURL.equals("")){
-			githubASWUrlsThreshold = aswURL.split(",").length;
-			githubUrls = (aswURL + ',' + pesURL).split(",");
-		}
-		else {
-			githubASWUrlsThreshold = 0;
-			githubUrls = pesURL.split(",");
-		}
+		githubASWUrlsThreshold = aswURL.split(",").length;
+		githubUrls = (aswURL + ',' + pesURL).split(",");
 
 
 		github_ASW_Secret	= props.get( GithubSourceConfig.GITHUB_ASW_SECRET_CONFIG);
