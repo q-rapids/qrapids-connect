@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 import model.github.branch.Branch;
 import model.github.branch.GitHubBranches;
 import model.github.commit.Commit;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -29,11 +28,8 @@ public class GithubSourceTask extends SourceTask {
 
 	private String version = "0.0.1";
 
-	private int githubASWUrlsThreshold;
-
 	private String[] githubUrls;
-	private String github_ASW_Secret;
-	private String github_PES_Secret;
+	private String githubSecret;
 	private String githubUser;
 	private String githubPass;
 	private String issue_topic;
@@ -124,12 +120,7 @@ public class GithubSourceTask extends SourceTask {
 
 		//commits
 
-		String githubSecret;
-
 		for(String url : githubUrls) {
-
-			if(ArrayUtils.indexOf(githubUrls, url) < githubASWUrlsThreshold) githubSecret = github_ASW_Secret;
-			else githubSecret = github_PES_Secret;
 
 			Repository repo = GithubApi.getRepository(url, githubSecret);
 
@@ -252,7 +243,7 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
-			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, (i.commit.message.toLowerCase().contains("task")));
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, (i.commit.message.contains("Task") || i.commit.message.contains("task") ));
 
 			Struct stats = new Struct(GithubSchema.githubStats);
 			stats.put(GithubSchema.FIELD_GITHUB_STATS_TOTAL, i.stats.total);
@@ -376,15 +367,11 @@ public class GithubSourceTask extends SourceTask {
 		log.info("connect-github: start");
 		log.info(props.toString());
 
-		String aswURL = props.get( GithubSourceConfig.GITHUB_ASW_URL_CONFIG);
-		String pesURL = props.get( GithubSourceConfig.GITHUB_PES_URL_CONFIG);
+		String aux		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
 
-		githubASWUrlsThreshold = aswURL.split(",").length;
-		githubUrls = (aswURL + ',' + pesURL).split(",");
+		githubUrls = aux.split(",");
 
-
-		github_ASW_Secret	= props.get( GithubSourceConfig.GITHUB_ASW_SECRET_CONFIG);
-		github_PES_Secret	= props.get( GithubSourceConfig.GITHUB_PES_SECRET_CONFIG);
+		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
 		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
 		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
