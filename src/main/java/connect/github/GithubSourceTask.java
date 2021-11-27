@@ -192,14 +192,21 @@ public class GithubSourceTask extends SourceTask {
 
 			log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits" + (commitsSet.size() > 15 ? "(this may take a little while)":""));
 			int cont = 1;
+
+
+			long poll = System.currentTimeMillis();
 			for (Commit c :commitsSet) {
-				if(cont % 20 == 0) log.info("COMMITS: Obtained commit stats for " + cont + " commits");
+				if((System.currentTimeMillis() - poll) >= 5000){
+					log.info("COMMITS: Obtained commit stats for " + cont + " commits");
+					poll = System.currentTimeMillis();
+				}
 				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
 				++cont;
 			}
 
 			log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
+			if(firstPoll) commitsSet = removeLargestOldCommit(commitsSet);
 			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
 			commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
@@ -209,8 +216,25 @@ public class GithubSourceTask extends SourceTask {
 		return records;
 	}
 
+	//Gets the 10 oldest commits and removes the one with most line changes
+	//The idea of this method is to remove the commit generated automatically by the framework
+	private Set<Commit> removeLargestOldCommit(Set<Commit> commitsSet) {
+		ArrayList<Commit> a = new ArrayList<>(commitsSet);
+		a.sort((o1, o2) -> o1.commit.author.date.compareTo(o2.commit.author.date));
+		int largestCommitIndex = 0;
+		for(int i = 1; i < 10; ++i){
+			Commit c = a.get(i);
+			if (c.stats.total > (a.get(largestCommitIndex)).stats.total) largestCommitIndex = i;
+		}
 
-    private List<SourceRecord> getCommitSourceRecords(Set<Commit> commitsList, List<User> collaborators, Repository repo) {
+		log.info("COMMIT: Removed a commit with " + a.get(largestCommitIndex).stats.total + " lines modified");
+		a.remove(largestCommitIndex);
+
+		return new HashSet<>(a);
+	}
+
+
+	private List<SourceRecord> getCommitSourceRecords(Set<Commit> commitsList, List<User> collaborators, Repository repo) {
         List<SourceRecord> result = new ArrayList<>();
 
         for (Commit i : commitsList){
