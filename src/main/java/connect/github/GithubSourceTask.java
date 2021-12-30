@@ -206,7 +206,7 @@ public class GithubSourceTask extends SourceTask {
 
 			log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
-			if(firstPoll) commitsSet = removeLargestOldCommit(commitsSet);
+			if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
 			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
 			commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
@@ -216,13 +216,16 @@ public class GithubSourceTask extends SourceTask {
 		return records;
 	}
 
-	//Gets the 10 oldest commits and removes the one with most line changes
-	//The idea of this method is to remove the commit generated automatically by the framework
+	//Gets the 10 oldest commits (or all the commits if there are not 10) and removes the one with most line changes
+	//The idea of this method is to remove the commit generated automatically by the used framework
 	private Set<Commit> removeLargestOldCommit(Set<Commit> commitsSet) {
 		ArrayList<Commit> a = new ArrayList<>(commitsSet);
 		a.sort((o1, o2) -> o1.commit.author.date.compareTo(o2.commit.author.date));
+
 		int largestCommitIndex = 0;
-		for(int i = 1; i < 10; ++i){
+		int n = Math.min(commitsSet.size(), 10);
+
+		for(int i = 1; i < n; ++i){
 			Commit c = a.get(i);
 			if (c.stats.total > (a.get(largestCommitIndex)).stats.total) largestCommitIndex = i;
 		}
@@ -263,7 +266,7 @@ public class GithubSourceTask extends SourceTask {
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE, i.commit.message);
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_VERIFIED, i.commit.verification.verified);
             commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
-			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REPO, repo.name);
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REPO, repo.full_name);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
