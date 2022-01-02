@@ -190,11 +190,16 @@ public class GithubSourceTask extends SourceTask {
 				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
 			}
 
-			log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits" + (commitsSet.size() > 15 ? "(this may take a little while)":""));
-			int cont = 1;
 
+			//obtaining the stats (number of code additions and deletions) for each commit
+			//all commits that are also merges are removed (all github merges have multiple parents)
 
+			log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits " + (commitsSet.size() > 15 ? "(this may take a little while)":""));
+			int cont = 0;
+			int merges = 0;
 			long poll = System.currentTimeMillis();
+
+			/*
 			for (Commit c :commitsSet) {
 				if((System.currentTimeMillis() - poll) >= 5000){
 					log.info("COMMITS: Obtained commit stats for " + cont + " commits");
@@ -203,10 +208,31 @@ public class GithubSourceTask extends SourceTask {
 				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
 				++cont;
 			}
+			*/
+
+			for (Iterator<Commit> i = commitsSet.iterator(); i.hasNext();) {
+				Commit c = i.next();
+				++cont;
+				if((System.currentTimeMillis() - poll) >= 5000){
+					log.info("COMMITS: Obtained commit stats for " + cont + " commits");
+					log.info("COMMITS: "+ merges + " commits were detected as merges and removed");
+					poll = System.currentTimeMillis();
+				}
+
+				if(c.parents.size() > 1){
+					i.remove();
+					++merges;
+					continue;
+				}
+				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
+			}
+
 
 			log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
+
 			if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+
 			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
 			commitMostRecentUpdate.put(url, mostRecentBranchUpdates);

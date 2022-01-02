@@ -170,9 +170,13 @@ public class GithubApi {
 
 
 	public static void main(String[] args) {
-		GitHubCommits ri = getCommits("https://api.github.com/repos/lorenamiralles/ProyectoASW","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", "13_Gestión_Usuarios", 1);
+
+		String secret = "";
+
+		GitHubCommits ri = getCommits("https://api.github.com/repos/kigrup/asw-hackernews", secret, "main", 1);
 		for(Commit c : ri.commits){
-			System.out.println(c.author.login);
+			System.out.println(c.parents.size());
+			System.out.println(c.parents.get(0).sha);
 		}
 	}
 	

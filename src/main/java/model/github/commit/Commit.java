@@ -2,12 +2,15 @@ package model.github.commit;
 
 import model.github.User;
 
+import java.util.List;
+
 public class Commit {
     public String sha;
     public CommitInfo commit;
     public String url;
     public User author;
     public User committer;
+    public List<ParentData> parents;
     public Stats stats;
 
     @Override
@@ -22,8 +25,7 @@ public class Commit {
     @Override
     public int hashCode() {
         final int prime = 31;
-        int result = prime * ((sha == null) ? 0 : sha.hashCode());
-        return result;
+        return prime * ((sha == null) ? 0 : sha.hashCode());
     }
 }
 
