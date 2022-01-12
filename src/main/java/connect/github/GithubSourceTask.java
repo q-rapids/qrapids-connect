@@ -147,8 +147,13 @@ public class GithubSourceTask extends SourceTask {
 				auxUser = GithubApi.getCollaborators(url, githubSecret, offset++);
 				collaborators.addAll(Arrays.asList(auxUser.users));
 			}while(auxUser.total_count == 100);
-			log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
 
+			if (collaborators.size() == 0){
+				log.info("COLLABORATORS: No collaborators detected, skipping to next URL");
+				continue;
+			}
+
+			log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
 
 			//getting a set of all new commits in every branch
 
@@ -189,7 +194,6 @@ public class GithubSourceTask extends SourceTask {
 
 				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
 			}
-
 
 			//obtaining the stats (number of code additions and deletions) for each commit
 			//all commits that are also merges are removed (all github merges have multiple parents)

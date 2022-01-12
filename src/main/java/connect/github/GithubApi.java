@@ -70,18 +70,30 @@ public class GithubApi {
 	// Returns all users that contributed to the repo and their n# of contributions
 	public static GithubUsers getCollaborators(String url, String secret, int offset) {
 
-		String api = "/collaborators";
-		String apiparams = "?per_page=100" + "&page=" + offset;
-		String urlCall = url + api + apiparams;
-		RESTInvoker ri = new RESTInvoker(urlCall, secret);
-		String json = ri.getDataFromServer("");
-		User[] coll = gson.fromJson(json, User[].class);
+		try {
+			String api = "/collaborators";
+			String apiparams = "?per_page=100" + "&page=" + offset;
+			String urlCall = url + api + apiparams;
+			RESTInvoker ri = new RESTInvoker(urlCall, secret);
+			String json = ri.getDataFromServer("");
+			User[] coll = gson.fromJson(json, User[].class);
 
-		GithubUsers gcoll = new GithubUsers();
-		gcoll.users=coll;
-		gcoll.total_count = (long) coll.length;
-		gcoll.offset = (long) offset;
-		return gcoll;
+			GithubUsers gcoll = new GithubUsers();
+			gcoll.users = coll;
+			gcoll.total_count = (long) coll.length;
+			gcoll.offset = (long) offset;
+			return gcoll;
+
+		}catch (RuntimeException e){
+			System.out.println("COLLABORATORS: Could not fetch the collaborators from " + url);
+			System.out.println(e.getMessage());
+
+			GithubUsers gcoll = new GithubUsers();
+			gcoll.users = new User[]{};
+			gcoll.total_count = (long) 0;
+			gcoll.offset = (long) offset;
+			return gcoll;
+		}
 	}
 
 	// Returns all repository labels
