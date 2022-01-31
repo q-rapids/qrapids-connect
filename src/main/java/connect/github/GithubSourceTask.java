@@ -300,7 +300,7 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
-			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, (i.commit.message.contains("Task") || i.commit.message.contains("task") ));
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, (i.commit.message.toLowerCase().contains("task")));
 
 			Struct stats = new Struct(GithubSchema.githubStats);
 			stats.put(GithubSchema.FIELD_GITHUB_STATS_TOTAL, i.stats.total);
