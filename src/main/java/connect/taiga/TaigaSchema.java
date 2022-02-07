@@ -101,6 +101,8 @@ public class TaigaSchema {
             .field("created_date" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("modified_date" ,Schema.OPTIONAL_STRING_SCHEMA )
             .field("finished_date" ,Schema.OPTIONAL_STRING_SCHEMA )
+            .field("estimated_effort", Schema.OPTIONAL_INT32_SCHEMA)
+            .field("actual_effort", Schema.OPTIONAL_INT32_SCHEMA)
             .build();
 
     public static Schema taigaMilestone = SchemaBuilder.struct().name("taigamilestone")
@@ -137,6 +139,9 @@ public class TaigaSchema {
             .field("milestone_modified_date" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("estimated_start" ,Schema.OPTIONAL_STRING_SCHEMA)
             .field("estimated_finish" ,Schema.OPTIONAL_STRING_SCHEMA)
+            .field("acceptance_criteria",Schema.OPTIONAL_BOOLEAN_SCHEMA)
+            .field("pattern", Schema.OPTIONAL_BOOLEAN_SCHEMA)
+            .field("priority", Schema.OPTIONAL_STRING_SCHEMA)
             .build();
             //.field("tasks", SchemaBuilder.array(taigaTask).build())
 

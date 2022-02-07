@@ -27,6 +27,8 @@ public class TaigaSourceConnector extends SourceConnector{
     private String taigaMetricUserStory;
     private String taigaMetricTask;
     private String taigaInterval;
+    private String taigaTaskCustomAttributes;
+    private String taigaUserstoryCustomAttributes;
 
     @Override
     public String version() {
@@ -49,6 +51,8 @@ public class TaigaSourceConnector extends SourceConnector{
         taigaMetricUserStory = props.get( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG );
         taigaMetricTask = props.get( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG );
+        taigaTaskCustomAttributes = props.get(TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG);
+        taigaUserstoryCustomAttributes = props.get(TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG);
 
         if ( taigaURL == null || taigaURL.isEmpty() )
             throw new ConnectException("TaigaSourceConnector configuration must include 'redmine.url' setting");
@@ -77,6 +81,8 @@ public class TaigaSourceConnector extends SourceConnector{
         config.put( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG, taigaMetricUserStory );
         config.put( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG, taigaMetricTask );
         config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, "" + taigaInterval);
+        config.put(TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, taigaTaskCustomAttributes);
+        config.put(TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, taigaUserstoryCustomAttributes);
         configs.add(config);
         return configs;
     }

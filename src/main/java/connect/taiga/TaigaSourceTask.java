@@ -39,6 +39,8 @@ public class TaigaSourceTask extends SourceTask{
     private String tasktopic;
     private String taigaInterval;
     private Integer interval;
+    private String taigaTaskCustomAttributes;
+    private String taigaUserstoryCustomAttributes;
 
     private String createdSince;
     private String updatedSince;
@@ -53,6 +55,17 @@ public class TaigaSourceTask extends SourceTask{
     private Boolean firstPoll = true;
 
     private Logger log = Logger.getLogger(TaigaSourceTask.class.getName());
+
+    private Boolean followsPattern(String description) {
+
+        String a="AS", b="I WANT", c="SO THAT";
+        description=description.toUpperCase();
+        return description.contains(a) && description.contains(b) && description.contains(c);
+    }
+
+    private Boolean hasAcceptanceCriteria(String criteria) {
+        return criteria.contains("1.");
+    }
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
@@ -119,17 +132,20 @@ public class TaigaSourceTask extends SourceTask{
         UserStory[] myUserStories;
         Task[] myTasks;
         Milestone[] myMilestones;
+        Map<Integer,String> taskAttributesIDs = new HashMap<>();
+        Map<Integer,String> userstoryAttributesIDs = new HashMap<>();
 
         do {
             myEpics = TaigaApi.getEpicsByProjectID(taigaUrl, taigaProjectId, taigaToken);
             myUserStories = TaigaApi.getUserStroriesByProjectId(taigaUrl, taigaProjectId,taigaToken);
             myTasks = TaigaApi.getTasks(taigaUrl, taigaProjectId,taigaToken);
             myMilestones = TaigaApi.getMilestonesByProjectId(taigaUrl, taigaProjectId, taigaToken);
-
+            taskAttributesIDs = TaigaApi.getCustomAttributesIDs(taigaUrl, "task",taigaProjectId,taigaToken,taigaTaskCustomAttributes.split(","));
+            userstoryAttributesIDs=TaigaApi.getCustomAttributesIDs(taigaUrl, "userstory",taigaProjectId,taigaToken, taigaUserstoryCustomAttributes.split(","));
             //records.addAll( getTaigaMetrics(myEpics, myUserStories, myTasks, myMilestones));
             records.addAll( getTaigaEpics(myEpics));
-            records.addAll( getTaigaUserStories( myUserStories, myMilestones));
-            records.addAll( getTaigaTasks(myTasks));
+            records.addAll( getTaigaUserStories( myUserStories, myMilestones, userstoryAttributesIDs));
+            records.addAll( getTaigaTasks(myTasks, taskAttributesIDs));
 
             break;
         } while (true);
@@ -140,7 +156,7 @@ public class TaigaSourceTask extends SourceTask{
         return records;
     }
 
-    private List<SourceRecord> getTaigaTasks(Task[] tasks) {
+    private List<SourceRecord> getTaigaTasks(Task[] tasks,Map<Integer,String> taskAttributesIDs) {
         List<SourceRecord> result = new ArrayList<>();
 
         Struct tasktemp;
@@ -150,7 +166,7 @@ public class TaigaSourceTask extends SourceTask{
 
             tasktemp = new Struct(TaigaSchema.taigaTask);
             tasktemp.put("subject", t.subject);
-            if(t.user_story!=null) tasktemp.put("user_story_id", t.user_story);
+            if (t.user_story != null) tasktemp.put("user_story_id", t.user_story);
             tasktemp.put("id", t.id);
             tasktemp.put("status", t.status_extra_info.name);
             tasktemp.put("is_closed", t.is_closed);
@@ -162,6 +178,14 @@ public class TaigaSourceTask extends SourceTask{
             if (t.finished_date != null)
                 tasktemp.put("finished_date", dfZULU.format(t.finished_date));
             //struct.put( "tasks", task);
+
+            Map<String, String> temp = TaigaApi.getCustomAttributes(t.id, "task", taigaUrl, taigaToken, taskAttributesIDs);
+            if (temp.get("Estimated Effort") != null){
+                tasktemp.put("estimated_effort", Integer.parseInt(temp.get("Estimated Effort")));
+            }
+            if (temp.get("Actual Effort") != null){
+                tasktemp.put("actual_effort", Integer.parseInt(temp.get("Actual Effort")));
+            }
 
             Map<String, String> sourcePartition = new HashMap<>();
             sourcePartition.put("taigaUrl", taigaUrl);
@@ -175,7 +199,7 @@ public class TaigaSourceTask extends SourceTask{
         return result;
     }
 
-    private List<SourceRecord> getTaigaUserStories(UserStory[] us, Milestone[] milestones) {
+    private List<SourceRecord> getTaigaUserStories(UserStory[] us, Milestone[] milestones, Map<Integer,String> userstoryAttributesIDs) {
         List<SourceRecord> result = new ArrayList<>();
 
         Struct ustemp;
@@ -194,6 +218,23 @@ public class TaigaSourceTask extends SourceTask{
             if(us[x].modified_date!=null)ustemp.put("modified_date", dfZULU.format(us[x].modified_date));
             if(us[x].finish_date!=null)ustemp.put("finished_date", dfZULU.format(us[x].finish_date));
             ustemp.put("total_points", us[x].total_points);
+
+            model.taiga.UserStory temp = TaigaApi.getUserStroryById(taigaUrl, us[x].id.toString(), taigaToken );
+            ustemp.put("pattern", followsPattern(temp.description));
+
+
+            Map<String, String> tempMap = TaigaApi.getCustomAttributes(us[x].id, "userstory", taigaUrl, taigaToken, userstoryAttributesIDs);
+            if (tempMap.get("Acceptance Criteria") != null){
+                ustemp.put("acceptance_criteria", hasAcceptanceCriteria(tempMap.get("Acceptance Criteria")));
+            }
+            else {
+                ustemp.put("acceptance_criteria", false);
+            }
+
+            if (tempMap.get("Priority") != null){
+                ustemp.put("priority", tempMap.get("Priority"));
+            }
+
             for(int y=0; y< milestones.length; ++y) {
                 if (us[x].milestone != null) {
                     if (us[x].milestone.equals(milestones[y].id)) {
@@ -347,7 +388,8 @@ public class TaigaSourceTask extends SourceTask{
         userstorytopic = props.get(TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG);
         tasktopic = props.get(TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG);
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG);
-
+        taigaTaskCustomAttributes = props.get(TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG);
+        taigaUserstoryCustomAttributes = props.get(TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG);
 
         log.info("taiga.url: " + taigaUrl);
         log.info("taiga.interval.seconds: " + taigaInterval);

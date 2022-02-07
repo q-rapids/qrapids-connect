@@ -5,6 +5,7 @@ import java.util.Date;
 public class UserStory {
 
     public String subject;
+    public String description;
     public Integer id;
     public Boolean is_closed;
     public Integer status;

@@ -34,7 +34,15 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final String TAIGA_SLUG_CONFIG = "slug";
     public static final String TAIGA_SLUG_CONFIG_DISPLAY = "taiga project slug";
     public static final String TAIGA_SLUG_CONFIG_DOC = "Slug of the wanted project";
- 
+
+    public static final String TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG = "taskCustomAttributes";
+    public static final String TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY = "Custom taiga task attributes list.";
+    public static final String TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DOC = "Custom taiga task attributes list.";
+
+    public static final String TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG = "userstoryCustomAttributes";
+    public static final String TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY = "Custom taiga userstory attributes list.";
+    public static final String TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DOC = "Custom taiga userstory attributes list.";
+
     public static final String TAIGA_ISSUE_TOPIC_CONFIG = "taiga.issue.topic";
     public static final String TAIGA_ISSUE_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga Issues.";
     public static final String TAIGA_ISSUE_TOPIC_CONFIG_DOC = "Topic to persist taiga Issues.";
@@ -79,7 +87,9 @@ public class TaigaSourceConfig extends AbstractConfig {
                 .define(TAIGA_USERSTORY_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_USERSTORY_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_USERSTORY_TOPIC_CONFIG_DOC, TAIGA_GROUP, 10, ConfigDef.Width.MEDIUM, TAIGA_USERSTORY_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_TASK_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_TASK_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_TASK_TOPIC_CONFIG_DOC, TAIGA_GROUP, 11, ConfigDef.Width.MEDIUM, TAIGA_TASK_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_TOKEN_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TOKEN_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_TOKEN_CONFIG_DISPLAY)
-                .define(TAIGA_REFRESH_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_REFRESH_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_REFRESH_CONFIG_DISPLAY);
+                .define(TAIGA_REFRESH_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_REFRESH_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_REFRESH_CONFIG_DISPLAY)
+                .define(TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DOC, TAIGA_GROUP, 12, ConfigDef.Width.MEDIUM, TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY)
+                .define(TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DOC, TAIGA_GROUP, 13, ConfigDef.Width.MEDIUM, TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY);
     }
 
     public TaigaSourceConfig(Map<String, String> originals) { super(DEFS, originals); }
