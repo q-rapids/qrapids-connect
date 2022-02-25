@@ -60,7 +60,9 @@ public class TaigaSourceTask extends SourceTask{
 
         String a="AS", b="I WANT", c="SO THAT";
         description=description.toUpperCase();
-        return description.contains(a) && description.contains(b) && description.contains(c);
+        return (description.contains("AS") && description.contains("I WANT") && description.contains("SO THAT")) ||
+                (description.contains("COM A") && description.contains("VULL") && description.contains("DE MANERA QUE")) ||
+                (description.contains("COMO") && description.contains("QUIERO") && description.contains("DE MANERA QUE"));
     }
 
     private Boolean hasAcceptanceCriteria(String criteria) {
@@ -145,7 +147,7 @@ public class TaigaSourceTask extends SourceTask{
             //records.addAll( getTaigaMetrics(myEpics, myUserStories, myTasks, myMilestones));
             records.addAll( getTaigaEpics(myEpics));
             records.addAll( getTaigaUserStories( myUserStories, myMilestones, userstoryAttributesIDs));
-            records.addAll( getTaigaTasks(myTasks, taskAttributesIDs));
+            records.addAll( getTaigaTasks(myTasks, taskAttributesIDs, myMilestones));
 
             break;
         } while (true);
@@ -156,7 +158,7 @@ public class TaigaSourceTask extends SourceTask{
         return records;
     }
 
-    private List<SourceRecord> getTaigaTasks(Task[] tasks,Map<Integer,String> taskAttributesIDs) {
+    private List<SourceRecord> getTaigaTasks(Task[] tasks,Map<Integer,String> taskAttributesIDs, Milestone[] milestones) {
         List<SourceRecord> result = new ArrayList<>();
 
         Struct tasktemp;
@@ -170,6 +172,7 @@ public class TaigaSourceTask extends SourceTask{
             tasktemp.put("id", t.id);
             tasktemp.put("status", t.status_extra_info.name);
             tasktemp.put("is_closed", t.is_closed);
+            tasktemp.put("reference", t.ref);
             if (t.assigned_to_extra_info != null)
                 tasktemp.put("assigned", t.assigned_to_extra_info.username);
             tasktemp.put("created_date", dfZULU.format(t.created_date));
@@ -185,6 +188,24 @@ public class TaigaSourceTask extends SourceTask{
             }
             if (temp.get("Actual Effort") != null){
                 tasktemp.put("actual_effort", Integer.parseInt(temp.get("Actual Effort")));
+            }
+            for(int y=0; y< milestones.length; ++y) {
+                if (t.milestone != null) {
+                    if (t.milestone.equals(milestones[y].id)) {
+                        tasktemp.put("milestone_id", milestones[y].id);
+                        tasktemp.put("milestone_name", milestones[y].name);
+                        tasktemp.put("milestone_closed_points", milestones[y].closed_points);
+                        tasktemp.put("milestone_total_points", milestones[y].total_points);
+                        tasktemp.put("milestone_closed", milestones[y].closed);
+                        tasktemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
+                        if (milestones[y].modified_date != null)
+                            tasktemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
+                        if (milestones[y].estimated_start != null)
+                            tasktemp.put("estimated_start", dfZULU.format(milestones[y].estimated_start));
+                        if (milestones[y].estimated_finish != null)
+                            tasktemp.put("estimated_finish", dfZULU.format(milestones[y].estimated_finish));
+                    }
+                }
             }
 
             Map<String, String> sourcePartition = new HashMap<>();
@@ -213,6 +234,7 @@ public class TaigaSourceTask extends SourceTask{
             ustemp.put("id", us[x].id);
             ustemp.put("status", us[x].status_extra_info.name);
             ustemp.put("is_closed", us[x].is_closed);
+            ustemp.put("reference", us[x].ref);
             if(us[x].assigned_to_extra_info!=null)ustemp.put("assigned", us[x].assigned_to_extra_info.username);
             ustemp.put("created_date", dfZULU.format(us[x].created_date));
             if(us[x].modified_date!=null)ustemp.put("modified_date", dfZULU.format(us[x].modified_date));

@@ -14,6 +14,7 @@ public class UserStory {
     public Epic[] epics;
     public String milestone_name;
     public String milestone_slug;
+    public Integer ref;
 
     public StatusExtraInfo status_extra_info;
     public AssignedToExtraInfo  assigned_to_extra_info;

@@ -143,7 +143,6 @@ public class TaigaApi {
             model.taiga.CustomAttributes[] attributes = gson.fromJson(json, model.taiga.CustomAttributes[].class);
 
             for (int i = 0; i < attributes.length; ++i) {
-                System.out.println(attributes[i].name);
                 if(Arrays.asList(customAttributes).contains(attributes[i].name))  {
                     WantedIDs.put(attributes[i].id, attributes[i].name);
                 }
@@ -155,7 +154,6 @@ public class TaigaApi {
             String json2 = ri2.getDataFromServer("");
             model.taiga.CustomAttributes[] attributes = gson.fromJson(json2, model.taiga.CustomAttributes[].class);
             for (int i = 0; i < attributes.length; ++i) {
-                System.out.println(attributes[i].name);
                 if(Arrays.asList(customAttributes).contains(attributes[i].name))  {
                     WantedIDs.put(attributes[i].id, attributes[i].name);
                 }
@@ -187,10 +185,8 @@ public class TaigaApi {
     public static void main(String[] args) {
 
 
-        String criteria = null;
-        System.out.println(criteria.contains("1."));
 
-       /* RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
+        RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
         String json = ri.restlogin("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
         model.taiga.User u = gson.fromJson(json, model.taiga.User.class);
         System.out.println(u.username);
@@ -203,16 +199,18 @@ public class TaigaApi {
 
         String test = "Estimated Effort,Actual Effort";
         String testarray[] = test.split(",");
-        System.out.println(testarray[0] + " " + testarray[1]);
-
         System.out.println(getCustomAttributesIDs("https://api.taiga.io/api/v1", "task", projectId, u.auth_token, testarray));
 
         //UserStory[] us = getUserStroriesByProjectId("https://api.taiga.io/api/v1", projectId, u.auth_token);
 
-        //Task[] tasks = getTasks("https://api.taiga.io/api/v1", projectId, u.auth_token);
-        //Map<Integer,String> WantedIDs =  getCustomAttributesIDs("https://api.taiga.io/api/v1","userstory",  projectId, u.auth_token);
-        //System.out.println(WantedIDs);
-        //for(int i=0; i<us.length; ++i) System.out.println(us[i].id.toString() + getCustomAttributes(us[i].id,"userstory", "https://api.taiga.io/api/v1", u.auth_token, WantedIDs));
+        Task[] tasks = getTasks("https://api.taiga.io/api/v1", projectId, u.auth_token);
+        Map<Integer,String> WantedIDs =  getCustomAttributesIDs("https://api.taiga.io/api/v1","task",  projectId, u.auth_token, testarray);
+        System.out.println(WantedIDs);
+        for(int i=0; i<tasks.length; ++i) {
+            Map<String,String> m = getCustomAttributes(tasks[i].id,"task", "https://api.taiga.io/api/v1", u.auth_token, WantedIDs);
+            System.out.println(m.get("Actual Effort"));
+        }
+
 
 
        /* RESTInvoker ri2= new RESTInvoker("https://api.taiga.io/api/v1/task-custom-attributes?project=" +projectId , u.auth_token);
