@@ -52,6 +52,16 @@ public class GithubSourceTask extends SourceTask {
 
 	private Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
+	private String getTaskNumber(String message) {
+		String[] aux = message.split(" ");
+		int i = 0;
+		while(i < aux.length){
+			if(aux[i].toLowerCase().equals("task") && (i+1 < aux.length)) return aux[i+1].replace("#", "");
+			++i;
+		}
+		return "null";
+	}
+
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
 
@@ -300,7 +310,12 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
-			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, (i.commit.message.toLowerCase().contains("task")));
+			boolean task = i.commit.message.toLowerCase().contains("task");
+			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, task);
+			if (task) {
+				String num = getTaskNumber(i.commit.message);
+				commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, num);
+			}
 
 			Struct stats = new Struct(GithubSchema.githubStats);
 			stats.put(GithubSchema.FIELD_GITHUB_STATS_TOTAL, i.stats.total);
