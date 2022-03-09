@@ -1,5 +1,6 @@
 package connect.github;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -16,6 +17,9 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import model.github.*;
+import org.elasticsearch.action.search.SearchResponse;
+
+import static connect.elasticsearch.ElasticsearchApi.getTaskReference;
 
 
 public class GithubSourceTask extends SourceTask {
@@ -34,6 +38,7 @@ public class GithubSourceTask extends SourceTask {
 	private String githubPass;
 	private String issue_topic;
 	private String commit_topic;
+	private String taiga_topic;
 	private String githubInterval;
 	private Integer interval;
 
@@ -52,14 +57,23 @@ public class GithubSourceTask extends SourceTask {
 
 	private Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
+	private final String NULL_STRING = "null";
+
 	private String getTaskNumber(String message) {
 		String[] aux = message.split(" ");
 		int i = 0;
 		while(i < aux.length){
-			if(aux[i].toLowerCase().equals("task") && (i+1 < aux.length)) return aux[i+1].replace("#", "");
+			if(aux[i].toLowerCase().equals("task") && (i+1 < aux.length)) {
+				try {
+					int a = Integer.parseInt(aux[i+1].replace("#", ""));
+					return aux[i+1].replace("#", "");
+				} catch (Exception e) {
+					return NULL_STRING;
+				}
+			}
 			++i;
 		}
-		return "null";
+		return NULL_STRING;
 	}
 
 	@Override
@@ -310,11 +324,38 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_REASON, i.commit.verification.reason);
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
+
 			boolean task = i.commit.message.toLowerCase().contains("task");
-			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, task);
 			if (task) {
 				String num = getTaskNumber(i.commit.message);
-				commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, num);
+				if(!num.equals(NULL_STRING)) {
+					try {
+						SearchResponse response = getTaskReference(taiga_topic, Integer.parseInt(num));
+						if(response.getHits().totalHits == 1) {
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, true);
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, num);
+						} else if(response.getHits().totalHits == 0) {
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
+						} else {
+							log.info("ERROR: obtained multiple tasks with reference " + num );
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
+							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
+						}
+					} catch (IOException e) {
+						log.info("ERROR: Error on fetch of task reference " + num );
+						e.printStackTrace();
+						commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, true);
+						commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
+					}
+					commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, num);
+				} else {
+					commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
+					commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
+				}
+			} else {
+				commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
+				commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
 			}
 
 			Struct stats = new Struct(GithubSchema.githubStats);
@@ -450,6 +491,7 @@ public class GithubSourceTask extends SourceTask {
 		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
 		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
+		taiga_topic		= props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
 		
 		for(String url : githubUrls) log.info("github.url: " + url);
 		log.info("github.created.since: " + createdSince);

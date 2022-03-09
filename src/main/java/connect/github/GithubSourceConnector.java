@@ -33,6 +33,7 @@ public class GithubSourceConnector extends SourceConnector {
 	private String githubCommitsTopic;
 	private String githubInterval;
 	private String githubCreatedSince;
+	private String taigaTaskTopic;
 
 	@Override
 	public String version() {
@@ -50,6 +51,7 @@ public class GithubSourceConnector extends SourceConnector {
 		githubPass = props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		githubIssuesTopic = props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
 		githubCommitsTopic = props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG);
+		taigaTaskTopic = props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG);
 		githubInterval = props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 		githubCreatedSince = props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 
@@ -75,6 +77,7 @@ public class GithubSourceConnector extends SourceConnector {
 		config.put( GithubSourceConfig.GITHUB_PASS_CONFIG, githubPass );
 		config.put( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG, githubIssuesTopic );
 		config.put( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG, githubCommitsTopic );
+		config.put( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG, taigaTaskTopic );
 		config.put( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG, "" + githubInterval);
 		config.put( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG, githubCreatedSince );
 		configs.add(config);

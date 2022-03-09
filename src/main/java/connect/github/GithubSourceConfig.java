@@ -46,6 +46,11 @@ public class GithubSourceConfig extends AbstractConfig {
     public static final String GITHUB_COMMIT_TOPIC_CONFIG_DISPLAY = "Topic to persist github Commits.";
     public static final String GITHUB_COMMIT_TOPIC_CONFIG_DOC = "Topic to persist github Commits.";
     public static final String GITHUB_COMMIT_TOPIC_CONFIG_DEFAULT = "github.commit.topic";
+
+    public static final String TAIGA_TASK_TOPIC_CONFIG = "taiga.task.topic";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DISPLAY = "Topic to persist taiga Tasks.";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DOC = "Topic to persist taiga Tasks.";
+    public static final String TAIGA_TASK_TOPIC_CONFIG_DEFAULT = "taiga.task.topic";
     
     public static final String GITHUB_INTERVAL_SECONDS_CONFIG = "github.interval.seconds";
     public static final String GITHUB_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
@@ -66,6 +71,7 @@ public class GithubSourceConfig extends AbstractConfig {
                 .define(GITHUB_PASS_CONFIG,             ConfigDef.Type.STRING, "",                            ConfigDef.Importance.LOW, GITHUB_PASS_CONFIG_DOC,              GITHUB_GROUP, 3, ConfigDef.Width.MEDIUM, GITHUB_PASS_CONFIG_DISPLAY)
                 .define(GITHUB_ISSUES_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_ISSUES_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_ISSUES_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 7, ConfigDef.Width.LONG, GITHUB_ISSUES_TOPIC_CONFIG_DISPLAY)
                 .define(GITHUB_COMMIT_TOPIC_CONFIG,     ConfigDef.Type.STRING,  GITHUB_COMMIT_TOPIC_CONFIG_DEFAULT,     ConfigDef.Importance.LOW, GITHUB_COMMIT_TOPIC_CONFIG_DOC,      GITHUB_GROUP, 6, ConfigDef.Width.LONG, GITHUB_COMMIT_TOPIC_CONFIG_DISPLAY)
+                .define(TAIGA_TASK_TOPIC_CONFIG,        ConfigDef.Type.STRING,  TAIGA_TASK_TOPIC_CONFIG_DEFAULT,        ConfigDef.Importance.LOW, TAIGA_TASK_TOPIC_CONFIG_DOC,         GITHUB_GROUP, 9, ConfigDef.Width.LONG, TAIGA_TASK_TOPIC_CONFIG_DISPLAY)
                 .define(GITHUB_INTERVAL_SECONDS_CONFIG, ConfigDef.Type.LONG,    GITHUB_INTERVAL_SECONDS_CONFIG_DEFAULT, ConfigDef.Importance.LOW, GITHUB_INTERVAL_SECONDS_CONFIG_DOC,  GITHUB_GROUP, 8, ConfigDef.Width.SHORT,  GITHUB_INTERVAL_SECONDS_CONFIG_DISPLAY);
     }
 
