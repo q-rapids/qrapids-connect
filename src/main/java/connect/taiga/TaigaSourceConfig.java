@@ -23,14 +23,6 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final String TAIGA_PASS_CONFIG_DISPLAY = "Password";
     public static final String TAIGA_PASS_CONFIG_DOC = "Password to connect to taiga.";
 
-    public static final String TAIGA_TOKEN_CONFIG = "token";
-    public static final String TAIGA_TOKEN_CONFIG_DISPLAY = "taiga token";
-    public static final String TAIGA_TOKEN_CONFIG_DOC = "token to use when connecting taiga.";
-
-    public static final String TAIGA_REFRESH_CONFIG = "refresh";
-    public static final String TAIGA_REFRESH_CONFIG_DISPLAY = "taiga refresh";
-    public static final String TAIGA_REFRESH_CONFIG_DOC = "token to refresh the taiga token.";
-
     public static final String TAIGA_SLUG_CONFIG = "slug";
     public static final String TAIGA_SLUG_CONFIG_DISPLAY = "taiga project slug";
     public static final String TAIGA_SLUG_CONFIG_DOC = "Slug of the wanted project";
@@ -86,8 +78,6 @@ public class TaigaSourceConfig extends AbstractConfig {
                 .define(TAIGA_EPIC_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_EPIC_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_EPIC_TOPIC_CONFIG_DOC, TAIGA_GROUP, 9, ConfigDef.Width.MEDIUM, TAIGA_EPIC_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_USERSTORY_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_USERSTORY_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_USERSTORY_TOPIC_CONFIG_DOC, TAIGA_GROUP, 10, ConfigDef.Width.MEDIUM, TAIGA_USERSTORY_TOPIC_CONFIG_DISPLAY)
                 .define(TAIGA_TASK_TOPIC_CONFIG, ConfigDef.Type.STRING, TAIGA_TASK_TOPIC_CONFIG_DEFAULT, ConfigDef.Importance.LOW, TAIGA_TASK_TOPIC_CONFIG_DOC, TAIGA_GROUP, 11, ConfigDef.Width.MEDIUM, TAIGA_TASK_TOPIC_CONFIG_DISPLAY)
-                .define(TAIGA_TOKEN_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TOKEN_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_TOKEN_CONFIG_DISPLAY)
-                .define(TAIGA_REFRESH_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_REFRESH_CONFIG_DOC, TAIGA_GROUP, 8, ConfigDef.Width.MEDIUM, TAIGA_REFRESH_CONFIG_DISPLAY)
                 .define(TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DOC, TAIGA_GROUP, 12, ConfigDef.Width.MEDIUM, TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY)
                 .define(TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, ConfigDef.Type.STRING, "", ConfigDef.Importance.LOW, TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DOC, TAIGA_GROUP, 13, ConfigDef.Width.MEDIUM, TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG_DISPLAY);
     }

@@ -2,14 +2,22 @@ package connect.taiga;
 
 import com.google.gson.Gson;
 import model.github.GithubIssues;
+import org.apache.kafka.clients.consumer.internals.SubscriptionState;
 import rest.RESTInvoker;
 import model.taiga.*;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class TaigaApi {
 
     private static Gson  gson = new Gson();
+    private static DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+    private static DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
 
     public static Issue[] getIssuesByProjectId(String url, String projectId, String token) {
         //Request of the project's issues
@@ -53,23 +61,18 @@ public class TaigaApi {
         return us;
     }
 
-    public static Milestone[] getMilestonesByProjectId(String url, String projectId, String token) {
+    public static Milestone[] getMilestonesByProjectId(String url, String projectId, String token) throws Exception {
         //Request of the project's epics
 
         RESTInvoker ri = new RESTInvoker(url+"/milestones?project="+projectId, token);
         String json = ri.getDataFromServer("");
         model.taiga.Milestone[] mil = gson.fromJson(json, model.taiga.Milestone[].class);
-        /*for(model.taiga.Milestone m : mil) {
-            System.out.println(m.name);
-            System.out.println(m.slug);
-            System.out.println(m.id);
-            System.out.println(m.total_points);
-            System.out.println(m.closed_points);
-            System.out.println(m.closed);
-            System.out.println(m.estimated_finish);
-            System.out.println(m.estimated_start);
-            System.out.println(m.created_date);
-            System.out.println(m.modified_date);
+        /*LocalDateTime now = LocalDateTime.now();
+        Date today=onlyDate.parse(now.toString());
+        for(model.taiga.Milestone m : mil) {
+            if(!m.closed && (m.estimated_start.compareTo(today)<0) ) {
+                System.out.println(m.name);
+            }
         }*/
         return mil;
     }
@@ -184,9 +187,19 @@ public class TaigaApi {
 
     public static void main(String[] args) {
 
+        Integer piD = getProjectId("https://api.taiga.io/api/v1","aleixlinares-test", null);
+        System.out.println(piD);
+        String projectId= piD.toString();
+
+        try {
+            Milestone m[] = getMilestonesByProjectId("https://api.taiga.io/api/v1", projectId, null);
+        } catch (Exception e) {
+            System.out.println("no va");
+        }
 
 
-        RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
+
+        /*RESTInvoker ri = new RESTInvoker("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
         String json = ri.restlogin("https://api.taiga.io/api/v1/auth", "aleix.linares@estudiantat.upc.edu", "rfc.185,ws");
         model.taiga.User u = gson.fromJson(json, model.taiga.User.class);
         System.out.println(u.username);

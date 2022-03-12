@@ -13,6 +13,7 @@ import org.apache.kafka.connect.source.SourceTaskContext;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -115,7 +116,14 @@ public class TaigaSourceTask extends SourceTask{
         //taigaRefresh =u.refresh;
         //log.info("REFRESH TOKEN: " + taigaRefresh);
         do {
+            if(taigaUser.equals("XXXX") || taigaUser.equals(" ") || taigaUser.equals("")) {
+                taigaToken = null;
+            }
+            else {
+                taigaToken = TaigaApi.Login(taigaUrl, taigaUser, taigaPass);
 
+            }
+            taigaProjectId = String.valueOf(TaigaApi.getProjectId(taigaUrl, taigaSlug, taigaToken));
             myProject = TaigaApi.getProject(taigaUrl, taigaProjectId, taigaToken);
             redmineIssues = TaigaApi.getIssuesByProjectId(taigaUrl, taigaProjectId, taigaToken);
             //MIRI TOTS ELS MODIFIED DATE
@@ -133,7 +141,7 @@ public class TaigaSourceTask extends SourceTask{
         Epic[] myEpics;
         UserStory[] myUserStories;
         Task[] myTasks;
-        Milestone[] myMilestones;
+        Milestone[] myMilestones = null;
         Map<Integer,String> taskAttributesIDs = new HashMap<>();
         Map<Integer,String> userstoryAttributesIDs = new HashMap<>();
 
@@ -141,7 +149,11 @@ public class TaigaSourceTask extends SourceTask{
             myEpics = TaigaApi.getEpicsByProjectID(taigaUrl, taigaProjectId, taigaToken);
             myUserStories = TaigaApi.getUserStroriesByProjectId(taigaUrl, taigaProjectId,taigaToken);
             myTasks = TaigaApi.getTasks(taigaUrl, taigaProjectId,taigaToken);
-            myMilestones = TaigaApi.getMilestonesByProjectId(taigaUrl, taigaProjectId, taigaToken);
+            try {
+                myMilestones = TaigaApi.getMilestonesByProjectId(taigaUrl, taigaProjectId, taigaToken);
+            } catch (Exception e) {
+                log.info("unable to parse a date");
+            }
             taskAttributesIDs = TaigaApi.getCustomAttributesIDs(taigaUrl, "task",taigaProjectId,taigaToken,taigaTaskCustomAttributes.split(","));
             userstoryAttributesIDs=TaigaApi.getCustomAttributesIDs(taigaUrl, "userstory",taigaProjectId,taigaToken, taigaUserstoryCustomAttributes.split(","));
             //records.addAll( getTaigaMetrics(myEpics, myUserStories, myTasks, myMilestones));
@@ -158,7 +170,7 @@ public class TaigaSourceTask extends SourceTask{
         return records;
     }
 
-    private List<SourceRecord> getTaigaTasks(Task[] tasks,Map<Integer,String> taskAttributesIDs, Milestone[] milestones) {
+    private List<SourceRecord> getTaigaTasks(Task[] tasks,Map<Integer,String> taskAttributesIDs, Milestone[] milestones)  throws InterruptedException{
         List<SourceRecord> result = new ArrayList<>();
 
         Struct tasktemp;
@@ -184,10 +196,10 @@ public class TaigaSourceTask extends SourceTask{
 
             Map<String, String> temp = TaigaApi.getCustomAttributes(t.id, "task", taigaUrl, taigaToken, taskAttributesIDs);
             if (temp.get("Estimated Effort") != null){
-                tasktemp.put("estimated_effort", Integer.parseInt(temp.get("Estimated Effort")));
+                tasktemp.put("estimated_effort", Float.parseFloat(temp.get("Estimated Effort")));
             }
             if (temp.get("Actual Effort") != null){
-                tasktemp.put("actual_effort", Integer.parseInt(temp.get("Actual Effort")));
+                tasktemp.put("actual_effort", Float.parseFloat(temp.get("Actual Effort")));
             }
             for(int y=0; y< milestones.length; ++y) {
                 if (t.milestone != null) {
@@ -196,7 +208,22 @@ public class TaigaSourceTask extends SourceTask{
                         tasktemp.put("milestone_name", milestones[y].name);
                         tasktemp.put("milestone_closed_points", milestones[y].closed_points);
                         tasktemp.put("milestone_total_points", milestones[y].total_points);
-                        tasktemp.put("milestone_closed", milestones[y].closed);
+                        LocalDateTime now = LocalDateTime.now();
+                        try {
+                            Date today = onlyDate.parse(now.toString());
+                            if(!milestones[y].closed && (milestones[y].estimated_start.compareTo(today)<0) ) {
+                                tasktemp.put("milestone_closed", milestones[y].closed);
+                            }
+                            else {
+                                tasktemp.put("milestone_closed", true);
+
+                            }
+                        } catch(ParseException e){
+                            //If an error happens we just put the value of closed to de schema.
+                            tasktemp.put("milestone_closed", milestones[y].closed);
+                            log.info("unable to parse "+now.toString());
+                            throw new InterruptedException();
+                        }
                         tasktemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
                         if (milestones[y].modified_date != null)
                             tasktemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
@@ -220,7 +247,7 @@ public class TaigaSourceTask extends SourceTask{
         return result;
     }
 
-    private List<SourceRecord> getTaigaUserStories(UserStory[] us, Milestone[] milestones, Map<Integer,String> userstoryAttributesIDs) {
+    private List<SourceRecord> getTaigaUserStories(UserStory[] us, Milestone[] milestones, Map<Integer,String> userstoryAttributesIDs) throws InterruptedException {
         List<SourceRecord> result = new ArrayList<>();
 
         Struct ustemp;
@@ -264,7 +291,22 @@ public class TaigaSourceTask extends SourceTask{
                         ustemp.put("milestone_name", milestones[y].name);
                         ustemp.put("milestone_closed_points", milestones[y].closed_points);
                         ustemp.put("milestone_total_points", milestones[y].total_points);
-                        ustemp.put("milestone_closed", milestones[y].closed);
+                        LocalDateTime now = LocalDateTime.now();
+                        try {
+                            Date today = onlyDate.parse(now.toString());
+                            if(!milestones[y].closed && (milestones[y].estimated_start.compareTo(today)<0) ) {
+                                ustemp.put("milestone_closed", milestones[y].closed);
+                            }
+                            else {
+                                ustemp.put("milestone_closed", true);
+
+                            }
+                        } catch(ParseException e){
+                            //If an error happens we just put the value of closed to de schema.
+                            ustemp.put("milestone_closed", milestones[y].closed);
+                            log.info("unable to parse "+now.toString());
+                            throw new InterruptedException();
+                        }
                         ustemp.put("milestone_created_date", dfZULU.format(milestones[y].created_date));
                         if (milestones[y].modified_date != null)
                             ustemp.put("milestone_modified_date", dfZULU.format(milestones[y].modified_date));
@@ -283,7 +325,7 @@ public class TaigaSourceTask extends SourceTask{
         Map<String,String> sourceOffset = new HashMap<>();
         sourceOffset.put( "updated",  dfZULU.format(us[x].modified_date) );
 
-        SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, userstorytopic, Schema.STRING_SCHEMA, us[x].toString(), TaigaSchema.taigaUserStory , ustemp);
+        SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, userstorytopic, Schema.STRING_SCHEMA, us[x].id.toString(), TaigaSchema.taigaUserStory , ustemp);
         result.add(sr);
         }
         return result;
@@ -403,8 +445,6 @@ public class TaigaSourceTask extends SourceTask{
         //taigaToken = props.get(TaigaSourceConfig.TAIGA_TOKEN_CONFIG);
         //taigaRefresh = props.get(TaigaSourceConfig.TAIGA_REFRESH_CONFIG);
         taigaSlug= props.get( TaigaSourceConfig.TAIGA_SLUG_CONFIG);
-        taigaToken = TaigaApi.Login(taigaUrl, taigaUser, taigaPass);
-        taigaProjectId = String.valueOf(TaigaApi.getProjectId(taigaUrl, taigaSlug, taigaToken));
         issuetopic = props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG);
         epictopic = props.get(TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG);
         userstorytopic = props.get(TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG);

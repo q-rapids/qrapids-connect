@@ -44,8 +44,6 @@ public class TaigaSourceConnector extends SourceConnector{
         taigaSlug = props.get( TaigaSourceConfig.TAIGA_SLUG_CONFIG);
         taigaUser = props.get( TaigaSourceConfig.TAIGA_USER_CONFIG );
         taigaPass = props.get( TaigaSourceConfig.TAIGA_PASS_CONFIG );
-        taigaToken = props.get( TaigaSourceConfig.TAIGA_TOKEN_CONFIG );
-        taigaRefresh = props.get( TaigaSourceConfig.TAIGA_REFRESH_CONFIG );
         taigaIssueTopic = props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG );
         taigaMetricEpic = props.get( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG );
         taigaMetricUserStory = props.get( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG );
@@ -74,8 +72,6 @@ public class TaigaSourceConnector extends SourceConnector{
         config.put( TaigaSourceConfig.TAIGA_SLUG_CONFIG, taigaSlug );
         config.put( TaigaSourceConfig.TAIGA_USER_CONFIG, taigaUser );
         config.put( TaigaSourceConfig.TAIGA_PASS_CONFIG, taigaPass );
-        config.put( TaigaSourceConfig.TAIGA_TOKEN_CONFIG, taigaToken );
-        config.put( TaigaSourceConfig.TAIGA_REFRESH_CONFIG, taigaRefresh );
         config.put( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG, taigaIssueTopic );
         config.put( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG, taigaMetricEpic );
         config.put( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG, taigaMetricUserStory );
