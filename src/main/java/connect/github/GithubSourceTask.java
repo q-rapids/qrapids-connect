@@ -18,6 +18,7 @@ import org.apache.kafka.connect.source.SourceTask;
 
 import model.github.*;
 import org.elasticsearch.action.search.SearchResponse;
+import rest.RESTInvoker;
 
 import static connect.elasticsearch.ElasticsearchApi.getTaskReference;
 
@@ -30,7 +31,7 @@ public class GithubSourceTask extends SourceTask {
 		dfZULU.setTimeZone(tzUTC);
 	}
 
-	private String version = "0.0.1";
+	private final String version = "0.0.1";
 
 	private String[] githubUrls;
 	private String githubSecret;
@@ -55,7 +56,7 @@ public class GithubSourceTask extends SourceTask {
 
 	private Boolean firstPoll = true;
 
-	private Logger log = Logger.getLogger(GithubSourceTask.class.getName());
+	private final Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
 	private final String NULL_STRING = "null";
 
@@ -63,7 +64,7 @@ public class GithubSourceTask extends SourceTask {
 		String[] aux = message.split(" ");
 		int i = 0;
 		while(i < aux.length){
-			if(aux[i].toLowerCase().equals("task") && (i+1 < aux.length)) {
+			if(aux[i].equalsIgnoreCase("task") && (i+1 < aux.length)) {
 				try {
 					int a = Integer.parseInt(aux[i+1].replace("#", ""));
 					return aux[i+1].replace("#", "");
@@ -109,7 +110,7 @@ public class GithubSourceTask extends SourceTask {
 				throw new InterruptedException();
 			}
 		}else{
-			log.info("Issue info updated since: " + issueMostRecentUpdate);
+			//log.info("Issue info updated since: " + issueMostRecentUpdate);
 			log.info("Commit info updated since: " + commitMostRecentUpdate);
 		}
 
@@ -143,129 +144,136 @@ public class GithubSourceTask extends SourceTask {
 
 
 		//commits
+		try {
+			for(String url : githubUrls) {
+				Repository repo = GithubApi.getRepository(url, githubSecret);
 
-		for(String url : githubUrls) {
+				log.info("Obtaining commits from " + url);
 
-			Repository repo = GithubApi.getRepository(url, githubSecret);
+				Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(url);
 
-			log.info("Obtaining commits from " + url);
-
-			Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(url);
-
-			int offset = 1;
-			List<Branch> branches = new ArrayList<>();
-			GitHubBranches auxBranch;
-			//get a list of all repository branches
-			do{
-				auxBranch = GithubApi.getBranches(url, githubSecret, offset++);
-				branches.addAll(Arrays.asList(auxBranch.branches));
-			}while(auxBranch.total_count == 100);
-			log.info("BRANCHES: Obtained " + branches.size() + " different branches");
+				int offset = 1;
+				List<Branch> branches = new ArrayList<>();
+				GitHubBranches auxBranch;
+				//get a list of all repository branches
+				do{
+					auxBranch = GithubApi.getBranches(url, githubSecret, offset++);
+					branches.addAll(Arrays.asList(auxBranch.branches));
+				}while(auxBranch.total_count == 100);
+				log.info("BRANCHES: Obtained " + branches.size() + " different branches");
 
 
-			//fetch collaborator list
-			offset = 1;
-			List<User> collaborators = new ArrayList<>();
-			GithubUsers auxUser;
-			do{
-				auxUser = GithubApi.getCollaborators(url, githubSecret, offset++);
-				collaborators.addAll(Arrays.asList(auxUser.users));
-			}while(auxUser.total_count == 100);
+				//fetch collaborator list
+				offset = 1;
+				List<User> collaborators = new ArrayList<>();
+				GithubUsers auxUser;
+				do{
+					auxUser = GithubApi.getCollaborators(url, githubSecret, offset++);
+					collaborators.addAll(Arrays.asList(auxUser.users));
+				}while(auxUser.total_count == 100);
 
-			if (collaborators.size() == 0){
-				log.info("COLLABORATORS: No collaborators detected, skipping to next URL");
-				continue;
-			}
-
-			log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
-
-			//getting a set of all new commits in every branch
-
-			Set<Commit> commitsSet = new HashSet<>();
-
-			for (Branch b : branches) {
-
-				Date branch_maxUpdatedOn = null;
-
-				Date mostRecentUpdate = mostRecentBranchUpdates.get(b.name);
-				if(mostRecentUpdate == null) mostRecentUpdate = defaultDate;
-
-				int commit_offset = 1;
-				GitHubCommits commit;
-
-				do {
-					String branchName = b.name;
-
-					commit = GithubApi.getCommits(url, githubSecret, branchName, commit_offset++);
-					log.info("COMMITS: Obtained " + commit.total_count + " commits from branch " + b.name + " with page " + (commit_offset - 1));
-
-					if (branch_maxUpdatedOn == null && commit.total_count > 0) {
-						branch_maxUpdatedOn = commit.commits[0].commit.author.date;
-					}
-
-					// download up to that moment
-					if (commit.commits.length == 0 || mostRecentUpdate.compareTo(commit.commits[0].commit.author.date) >= 0)
-						break;
-
-					// only new commits are saved
-					int commitSetSize = commitsSet.size();
-					for (Commit auxComm : commit.commits) {
-						if (mostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsSet.add(auxComm);
-					}
-					if(commitSetSize != commitsSet.size()) log.info("COMMITS: Added " + (commitsSet.size() - commitSetSize) + " new commits from branch " + b.name);
-
-				} while (commit.total_count == 100);
-
-				if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
-			}
-
-			//obtaining the stats (number of code additions and deletions) for each commit
-			//all commits that are also merges are removed (all github merges have multiple parents)
-
-			log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits " + (commitsSet.size() > 15 ? "(this may take a little while)":""));
-			int cont = 0;
-			int merges = 0;
-			long poll = System.currentTimeMillis();
-
-			/*
-			for (Commit c :commitsSet) {
-				if((System.currentTimeMillis() - poll) >= 5000){
-					log.info("COMMITS: Obtained commit stats for " + cont + " commits");
-					poll = System.currentTimeMillis();
-				}
-				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
-				++cont;
-			}
-			*/
-
-			for (Iterator<Commit> i = commitsSet.iterator(); i.hasNext();) {
-				Commit c = i.next();
-				++cont;
-				if((System.currentTimeMillis() - poll) >= 5000){
-					log.info("COMMITS: Obtained commit stats for " + cont + " commits");
-					log.info("COMMITS: "+ merges + " commits were detected as merges and removed");
-					poll = System.currentTimeMillis();
-				}
-
-				if(c.parents.size() > 1){
-					i.remove();
-					++merges;
+				if (collaborators.size() == 0){
+					log.info("COLLABORATORS: No collaborators detected, skipping to next URL");
 					continue;
 				}
-				c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
+
+				log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
+
+				//getting a set of all new commits in every branch
+
+				Set<Commit> commitsSet = new HashSet<>();
+
+				for (Branch b : branches) {
+
+					Date branch_maxUpdatedOn = null;
+
+					Date mostRecentUpdate = mostRecentBranchUpdates.get(b.name);
+					if(mostRecentUpdate == null) mostRecentUpdate = defaultDate;
+
+					int commit_offset = 1;
+					GitHubCommits commit;
+
+					do {
+						String branchName = b.name;
+
+						commit = GithubApi.getCommits(url, githubSecret, branchName, commit_offset++);
+						log.info("COMMITS: Obtained " + commit.total_count + " commits from branch " + b.name + " with page " + (commit_offset - 1));
+
+						if (branch_maxUpdatedOn == null && commit.total_count > 0) {
+							branch_maxUpdatedOn = commit.commits[0].commit.author.date;
+						}
+
+						// download up to that moment
+						if (commit.commits.length == 0 || mostRecentUpdate.compareTo(commit.commits[0].commit.author.date) >= 0)
+							break;
+
+						// only new commits are saved
+						int commitSetSize = commitsSet.size();
+						for (Commit auxComm : commit.commits) {
+							if (mostRecentUpdate.compareTo(auxComm.commit.author.date) < 0) commitsSet.add(auxComm);
+						}
+						if(commitSetSize != commitsSet.size()) log.info("COMMITS: Added " + (commitsSet.size() - commitSetSize) + " new commits from branch " + b.name);
+
+					} while (commit.total_count == 100);
+
+					if (branch_maxUpdatedOn != null) mostRecentBranchUpdates.put(b.name, branch_maxUpdatedOn);
+				}
+
+				//obtaining the stats (number of code additions and deletions) for each commit
+				//all commits that are also merges are removed (all github merges have multiple parents)
+
+				log.info("COMMITS: Obtaining commit stats for " + commitsSet.size() + " commits " + (commitsSet.size() > 15 ? "(this may take a little while)":""));
+				int cont = 0;
+				int merges = 0;
+				long poll = System.currentTimeMillis();
+
+				/*
+				for (Commit c :commitsSet) {
+					if((System.currentTimeMillis() - poll) >= 5000){
+						log.info("COMMITS: Obtained commit stats for " + cont + " commits");
+						poll = System.currentTimeMillis();
+					}
+					c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
+					++cont;
+				}
+				*/
+
+				for (Iterator<Commit> i = commitsSet.iterator(); i.hasNext();) {
+					Commit c = i.next();
+					++cont;
+					if((System.currentTimeMillis() - poll) >= 5000){
+						log.info("COMMITS: Obtained commit stats for " + cont + " commits");
+						log.info("COMMITS: "+ merges + " commits were detected as merges and removed");
+						poll = System.currentTimeMillis();
+					}
+
+					if(c.parents.size() > 1){
+						i.remove();
+						++merges;
+						continue;
+					}
+					c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
+				}
+
+
+				log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
+
+
+				if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+
+				if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
+
+				commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
 			}
 
-
-			log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
-
-
-			if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
-
-			if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
-
-			commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
+		} catch (RuntimeException e){
+			if(e.getMessage().equals(RESTInvoker.HTTP_STATUS_FORBIDDEN)) {
+				log.info("ERROR: GitHub API rate limit exeeded. The data will not be updated until the next poll");
+			}
+			else{
+				throw new RuntimeException(e);
+			}
 		}
-
 		firstPoll = false;
 		return records;
 	}
@@ -274,7 +282,7 @@ public class GithubSourceTask extends SourceTask {
 	//The idea of this method is to remove the commit generated automatically by the used framework
 	private Set<Commit> removeLargestOldCommit(Set<Commit> commitsSet) {
 		ArrayList<Commit> a = new ArrayList<>(commitsSet);
-		a.sort((o1, o2) -> o1.commit.author.date.compareTo(o2.commit.author.date));
+		a.sort(Comparator.comparing(o -> o.commit.author.date));
 
 		int largestCommitIndex = 0;
 		int n = Math.min(commitsSet.size(), 10);
@@ -291,7 +299,7 @@ public class GithubSourceTask extends SourceTask {
 	}
 
 
-	private List<SourceRecord> getCommitSourceRecords(Set<Commit> commitsList, List<User> collaborators, Repository repo) {
+	private List<SourceRecord> getCommitSourceRecords(Set<Commit> commitsList, List<User> collaborators, Repository repo) throws RuntimeException {
         List<SourceRecord> result = new ArrayList<>();
 
         for (Commit i : commitsList){

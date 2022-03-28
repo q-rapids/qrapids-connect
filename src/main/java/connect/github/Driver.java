@@ -5,6 +5,7 @@
 
 package connect.github;
 
+import java.sql.Struct;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,6 @@ public class Driver {
 		
 		while(true) {
 			List<SourceRecord> l = st.poll();
-			
 			for (SourceRecord sr : l) {
 				System.out.println(sr);
 			}

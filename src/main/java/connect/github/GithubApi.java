@@ -8,6 +8,7 @@ import model.github.commit.Commit;
 import model.github.commit.CommitStats;
 import rest.RESTInvoker;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -34,7 +35,7 @@ public class GithubApi {
 
 	private static Gson gson = new Gson();
 
-	public static GithubIssues getIssues(String url, String secret, String updatedSince, State state, int offset) {
+	public static GithubIssues getIssues(String url, String secret, String updatedSince, State state, int offset) throws RuntimeException{
 
 		String api = "/issues";
 		String apiparams = "?since="+ updatedSince +"&state=" + state.getValue() + "&order_by=updated_at&sort=desc&per_page=100&page=" + offset;
@@ -51,7 +52,7 @@ public class GithubApi {
 	}
 
 	// Returns all users that contributed to the repo and their n# of contributions
-	public static GitHubBranches getBranches(String url, String secret, int offset) {
+	public static GitHubBranches getBranches(String url, String secret, int offset) throws RuntimeException {
 
 		String api = "/branches";
 		String apiparams = "?per_page=100" + "&page=" + offset;
@@ -68,7 +69,7 @@ public class GithubApi {
 	}
 
 	// Returns all users that contributed to the repo and their n# of contributions
-	public static GithubUsers getCollaborators(String url, String secret, int offset) {
+	public static GithubUsers getCollaborators(String url, String secret, int offset) throws RuntimeException {
 
 		try {
 			String api = "/collaborators";
@@ -85,6 +86,11 @@ public class GithubApi {
 			return gcoll;
 
 		}catch (RuntimeException e){
+
+			if(e.getMessage().equals(RESTInvoker.HTTP_STATUS_FORBIDDEN)) {
+				throw new RuntimeException(e);
+			}
+
 			System.out.println("COLLABORATORS: Could not fetch the collaborators from " + url);
 			System.out.println(e.getMessage());
 
@@ -97,7 +103,7 @@ public class GithubApi {
 	}
 
 	// Returns all repository labels
-	public static GithubLabels getLabels(String url, String secret, int offset) {
+	public static GithubLabels getLabels(String url, String secret, int offset) throws RuntimeException {
 
 		String api = "/labels";
 		String apiparams = "?page=" + offset;
@@ -114,15 +120,14 @@ public class GithubApi {
 	}
 
 	// Returns the repository specified by the url
-	public static Repository getRepository(String url, String secret) {
-
+	public static Repository getRepository(String url, String secret) throws RuntimeException{
 		RESTInvoker ri = new RESTInvoker(url, secret);
 		String json = ri.getDataFromServer("");
-        return gson.fromJson(json, Repository.class);
+		return gson.fromJson(json, Repository.class);
 	}
 
 	// Returns the repository milestones
-	public static GithubMilestones getMilestones(String url, String secret, State state, int offset) {
+	public static GithubMilestones getMilestones(String url, String secret, State state, int offset) throws RuntimeException {
 
 		String api = "/milestones";
 		String apiparams = "?state=all&sort=desc&page=" + offset + "&state=" + state.getValue();
@@ -139,8 +144,7 @@ public class GithubApi {
 	}
 
 	// Returns all commits made by a user
-	public static GitHubCommits getCommits(String url, String secret, String branch, int offset) {
-
+	public static GitHubCommits getCommits(String url, String secret, String branch, int offset) throws RuntimeException {
 		try {
 			String api = "/commits";
 			String apiparams = "?sha=" + branch + "&per_page=100&page=" + offset;
@@ -155,7 +159,12 @@ public class GithubApi {
 			gcommit.offset = (long) offset;
 			return gcommit;
 
-		}catch (RuntimeException e){
+		}catch (RuntimeException e) {
+
+			if(e.getMessage().equals(RESTInvoker.HTTP_STATUS_FORBIDDEN)) {
+				throw new RuntimeException(e);
+			}
+
 			System.out.println("COMMITS: Commit API error in branch " + branch);
 			System.out.println(e.getMessage());
 
@@ -167,7 +176,7 @@ public class GithubApi {
 		}
 	}
 
-	public static CommitStats getCommitInfo(String url, String secret, String commitSha) {
+	public static CommitStats getCommitInfo(String url, String secret, String commitSha) throws RuntimeException {
 		String api = "/commits";
 		String apiparams = "/" + commitSha;
 		String urlCall = url + api + apiparams;
@@ -185,7 +194,14 @@ public class GithubApi {
 
 		String secret = "";
 
-		GitHubCommits ri = getCommits("https://api.github.com/repos/kigrup/asw-hackernews", secret, "main", 1);
+
+		GitHubCommits ri = null;
+		for(int i = 1; i <= 80; ++i)
+			ri = getCommits("https://api.github.com/repos/q-rapids/learning-dashboard", null, "master", i);
+
+
+		//GitHubCommits ri = getCommits("https://api.github.com/repos/q-rapids/learning-dashboard", null, "master", 1);
+
 		for(Commit c : ri.commits){
 			System.out.println(c.parents.size());
 			System.out.println(c.parents.get(0).sha);
