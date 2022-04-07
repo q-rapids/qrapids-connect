@@ -60,21 +60,26 @@ public class GithubSourceTask extends SourceTask {
 
 	private final String NULL_STRING = "null";
 
-	private String getTaskNumber(String message) {
-		String[] aux = message.split(" ");
+	private static String getTaskNumber(String message) {
+		List<String> words = new ArrayList<String>(Arrays.asList(message.split(" ")));
+		words.removeAll(Arrays.asList("", null));
 		int i = 0;
-		while(i < aux.length){
-			if(aux[i].equalsIgnoreCase("task") && (i+1 < aux.length)) {
-				try {
-					int a = Integer.parseInt(aux[i+1].replace("#", ""));
-					return aux[i+1].replace("#", "");
-				} catch (Exception e) {
-					return NULL_STRING;
+		while(i < words.size()){
+			if((words.get(i).equalsIgnoreCase("task") || words.get(i).equalsIgnoreCase("tasca") || words.get(i).equalsIgnoreCase("tarea")) && (i+1 < words.size())) {
+				StringBuilder num = new StringBuilder();
+				String aux = words.get(i + 1);
+				int j = aux.charAt(0) == '#' ? 1 : 0; //if the first char is '#' we ignore it
+				while (j < aux.length()) {
+					if (!Character.isDigit(aux.charAt(j))) break;
+					num.append(aux.charAt(j));
+					++j;
 				}
+				if(num.length() == 0) return null;
+				else return num.toString().replaceFirst("^0+(?!$)", ""); //we need to delete all leading zeros
 			}
 			++i;
 		}
-		return NULL_STRING;
+		return null;
 	}
 
 	@Override
@@ -265,6 +270,7 @@ public class GithubSourceTask extends SourceTask {
 
 				commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
 			}
+			firstPoll = false;
 
 		} catch (RuntimeException e){
 			if(e.getMessage().equals(RESTInvoker.HTTP_STATUS_FORBIDDEN)) {
@@ -274,7 +280,6 @@ public class GithubSourceTask extends SourceTask {
 				throw new RuntimeException(e);
 			}
 		}
-		firstPoll = false;
 		return records;
 	}
 
@@ -333,10 +338,12 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_CHARCOUNT, (long) i.commit.message.length());
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
 
-			boolean task = i.commit.message.toLowerCase().contains("task");
+			boolean task = i.commit.message.toLowerCase().contains("task") || i.commit.message.toLowerCase().contains("tasca") || i.commit.message.toLowerCase().contains("tarea");
 			if (task) {
+				log.info("MSSG: " + i.sha);
+				log.info("MSSG: " + i.commit.message);
 				String num = getTaskNumber(i.commit.message);
-				if(!num.equals(NULL_STRING)) {
+				if(num != null) {
 					try {
 						SearchResponse response = getTaskReference(taiga_topic, Integer.parseInt(num));
 						if(response.getHits().totalHits == 1) {

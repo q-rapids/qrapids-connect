@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iese</groupId>
 	<artifactId>qrapids-connect</artifactId>
-	<version>1.0</version>
+	<version>2.1</version>
 	<name>Q-Rapids Kafka connectors</name>
 	<description>Connectors for jenkins, jira, sonarcube, svn, and redmine</description>
 
@@ -100,12 +100,6 @@
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 			<version>4.5.13</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.11.1</version>
 		</dependency>
 
 		<dependency>
