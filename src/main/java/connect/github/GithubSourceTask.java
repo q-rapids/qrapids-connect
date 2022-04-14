@@ -340,8 +340,6 @@ public class GithubSourceTask extends SourceTask {
 
 			boolean task = i.commit.message.toLowerCase().contains("task") || i.commit.message.toLowerCase().contains("tasca") || i.commit.message.toLowerCase().contains("tarea");
 			if (task) {
-				log.info("MSSG: " + i.sha);
-				log.info("MSSG: " + i.commit.message);
 				String num = getTaskNumber(i.commit.message);
 				if(num != null) {
 					try {

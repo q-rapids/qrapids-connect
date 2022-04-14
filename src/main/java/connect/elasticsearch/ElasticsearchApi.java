@@ -1,31 +1,16 @@
 package connect.elasticsearch;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import connect.github.GithubSourceTask;
 import org.apache.http.HttpHost;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.index.query.QueryBuilders.*;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -66,7 +51,7 @@ public class ElasticsearchApi {
         //System.out.println("topic " + topic);
         //System.out.println("ref " + reference);
 
-        RestClient lowLevelClient = RestClient.builder(new HttpHost("elasticsearch", PORT))
+        RestClient lowLevelClient = RestClient.builder(new HttpHost("localhost", PORT))
                 .build();
         RestHighLevelClient client = new RestHighLevelClient(lowLevelClient);
         SearchResponse response = client.search(new SearchRequest(topic)
