@@ -17,6 +17,9 @@ import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * @author: Max Tiessler
+ */
 public class GoogleAuthorizeUtil {
 
     /**
@@ -27,7 +30,8 @@ public class GoogleAuthorizeUtil {
     public static Credential authorize() throws IOException, GeneralSecurityException {
 
         InputStream in = GoogleAuthorizeUtil.class.getResourceAsStream("/credentials.json");
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JacksonFactory.getDefaultInstance(),
+        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(
+                JacksonFactory.getDefaultInstance(),
                 new InputStreamReader(in));
 
         List<String> scopes = Arrays.asList(SheetsScopes.SPREADSHEETS);
