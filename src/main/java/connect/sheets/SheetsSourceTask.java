@@ -53,7 +53,7 @@ public class SheetsSourceTask extends SourceTask {
     }
 
     private boolean lostConnection() {
-        return System.currentTimeMillis() < (lastPollTime + (10));
+        return System.currentTimeMillis() < (lastPollTime + (1000));
     }
 
 

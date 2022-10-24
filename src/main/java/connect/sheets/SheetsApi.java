@@ -10,6 +10,9 @@ import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 
@@ -27,10 +30,12 @@ public class SheetsApi {
         /* Load pre-authorized user credentials from the environment.
            TODO(developer) - See https://developers.google.com/identity for
             guides on implementing OAuth2 for your application. */
-		GoogleCredentials credentials = GoogleCredentials.getApplicationDefault()
+		GoogleCredentials credentials = GoogleCredentials.fromStream(
+				new FileInputStream("C:\\Users\\Max\\IdeaProjects\\qrapids-connect\\src\\main\\java\\connect\\sheets\\credentials.json"))
 				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
 		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(
 				credentials);
+
 
 		// Create the sheets API client
 		Sheets service = new Sheets.Builder(new NetHttpTransport(),
