@@ -75,7 +75,7 @@ public class SheetsSourceTask extends SourceTask {
         try {
             ValueRange values = SheetsApi.getValues(spreadSheetId, "A1");
             sheetLogger.info(values.toString());
-        } catch (IOException | GeneralSecurityException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         sheetLogger.info("Finish");
