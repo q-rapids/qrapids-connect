@@ -17,6 +17,8 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private String pollInterval;
 
+    private String spreadSheetId;
+
     @Override
     public String version() {
         return "0.0.1";
@@ -49,6 +51,7 @@ public class SheetsSourceConnector extends SourceConnector {
         ArrayList<Map<String, String>> configurationList = new ArrayList<>();
 
         Map<String, String> configuration = new HashMap<>();
+        configuration.put(SheetsSourceConfig.SPREADSHEET_ID, spreadSheetId);
         configuration.put(SheetsSourceConfig.SHEET_CLIENT_ID, authorizationCredentials.getClientId());
         configuration.put(SheetsSourceConfig.SHEET_PROJECT_ID, authorizationCredentials.getProjectId());
         configuration.put(SheetsSourceConfig.SHEET_AUTH_URI, authorizationCredentials.getAuthorizationUri().toString());

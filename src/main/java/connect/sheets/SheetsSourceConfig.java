@@ -13,10 +13,14 @@ import java.util.Map;
 /**
  *
  * Configuration properties of the Sheet Source Connector
- * @author Axel Wickenkamp, Max Tiessler
+ * @author Max Tiessler
  */
 public class SheetsSourceConfig extends AbstractConfig {
 
+
+    public static final String SPREADSHEET_ID = "spreadsheet.id";
+    public static final String SPREADSHEET_ID_CONFIG_DISPLAY = "Spreadsheet ID";
+    public static final String SPREADSHEET_ID_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
 
     public static final String SHEET_CLIENT_ID = "sheet.client";
     public static final String SHEET_CLIENT_ID_CONFIG_DISPLAY = "Client ID";
