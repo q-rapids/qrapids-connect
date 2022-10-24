@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 public class SheetsSourceTask extends SourceTask {
     private Integer pollInterval;
 
+    private Long lastPollTime;
+
     private AuthorizationCredentials authorizationCredentials;
     private final Logger sheetLogger = Logger.getLogger(SheetsSourceTask.class.getName());
     @Override
@@ -23,6 +25,7 @@ public class SheetsSourceTask extends SourceTask {
     public void start(Map<String, String> properties) {
         sheetLogger.info("connect-sheets: start");
         sheetLogger.info(properties.toString());
+        lastPollTime = 0L;
         if(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT == null) {
             pollInterval = 3600;
         } else{
@@ -43,8 +46,27 @@ public class SheetsSourceTask extends SourceTask {
 
     }
 
+    private boolean lostConnection() {
+        return System.currentTimeMillis() < (lastPollTime + (pollInterval * 1000));
+    }
+
+
+
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
+
+        List <SourceRecord> records = new ArrayList<>();
+
+        if(lastPollTime != 0 && lostConnection()) {
+            Thread.sleep(1000);
+            return records;
+        }
+
+        lastPollTime = System.currentTimeMillis();
+
+        //Reading table
+        sheetLogger.info("Reading table from Google Sheets");
+
         return new ArrayList<>();
     }
 
