@@ -35,20 +35,21 @@ public class SheetsSourceTask extends SourceTask {
         if(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT == null) {
             pollInterval = 3600;
         } else{
-            pollInterval = SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT;
+            //pollInterval = SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT;
+            pollInterval = 60;
         }
-        try {
-            authorizationCredentials = AuthorizationCredentials.getInstance(
-                    properties.get(SheetsSourceConfig.SHEET_CLIENT_ID),
-                    properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
-                    properties.get(SheetsSourceConfig.SHEET_AUTH_URI),
-                    properties.get(SheetsSourceConfig.SHEET_TOKEN_URI),
-                    properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER),
-                    properties.get(SheetsSourceConfig.SHEET_CLIENT_SECRET),
-                    properties.get(SheetsSourceConfig.SHEET_REDIRECT_URI));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
+
+        authorizationCredentials = AuthorizationCredentials.getInstance(
+                properties.get(SheetsSourceConfig.SHEET_TYPE),
+                properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
+                properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID),
+                properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY),
+                properties.get(SheetsSourceConfig.SHEET_CLIENT_EMAIL),
+                properties.get(SheetsSourceConfig.SHEET_CLIENT_ID),
+                properties.get(SheetsSourceConfig.SHEET_AUTH_URI),
+                properties.get(SheetsSourceConfig.SHEET_TOKEN_URI),
+                properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL),
+                properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL));
 
     }
 
@@ -75,7 +76,7 @@ public class SheetsSourceTask extends SourceTask {
         try {
             ValueRange values = SheetsApi.getValues(spreadSheetId, "A1");
             sheetLogger.info(values.toString());
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
         sheetLogger.info("Finish");
