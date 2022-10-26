@@ -4,9 +4,7 @@ import com.google.api.services.sheets.v4.model.ValueRange;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.security.GeneralSecurityException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,10 @@ public class SheetsSourceTask extends SourceTask {
 
     private String spreadSheetId;
 
+    private String memberNames;
+
+    private String sprintNames;
+
     private AuthorizationCredentials authorizationCredentials;
     private final Logger sheetLogger = Logger.getLogger(SheetsSourceTask.class.getName());
     @Override
@@ -29,8 +31,14 @@ public class SheetsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> properties) {
         sheetLogger.info("connect-sheets: start");
+
+
+        initializeAuthorizationCredentials(properties);
+        initializeSpreadsheet(properties);
+
+
         sheetLogger.info(properties.toString());
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
+
         lastPollTime = 0L;
         if(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT == null) {
             pollInterval = 3600;
@@ -39,6 +47,12 @@ public class SheetsSourceTask extends SourceTask {
             pollInterval = 60;
         }
 
+
+
+    }
+
+    private void initializeAuthorizationCredentials(final Map<String, String> properties) {
+        sheetLogger.info("connect-sheets: Initialize Authorization credentials");
         authorizationCredentials = AuthorizationCredentials.getInstance(
                 properties.get(SheetsSourceConfig.SHEET_TYPE),
                 properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
@@ -50,8 +64,24 @@ public class SheetsSourceTask extends SourceTask {
                 properties.get(SheetsSourceConfig.SHEET_TOKEN_URI),
                 properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL),
                 properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL));
+    }
+
+    private void initializeSpreadsheet(final Map<String, String> properties) {
+        sheetLogger.info("connect-sheets: Initialize Spreadsheet");
+        memberNames = properties.get(SheetsSourceConfig.SHEET_MEMBER_NAMES);
+        sprintNames = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
+        if(SheetsSourceConfig.SPREADSHEET_ID == null) {
+            createSpreadsheet(properties);
+        } else {
+            sheetLogger.info("connect-sheets: Spreadsheet exists");
+            spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
+        }
+    }
+
+    private void createSpreadsheet(final Map <String, String> properties) {
 
     }
+
 
     private boolean lostConnection() {
         return System.currentTimeMillis() < (lastPollTime + (1000));
@@ -61,7 +91,6 @@ public class SheetsSourceTask extends SourceTask {
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
-
         List <SourceRecord> records = new ArrayList<>();
         sheetLogger.info("lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime) + " interval:" + pollInterval);
         if(lastPollTime != 0 && lostConnection()) {

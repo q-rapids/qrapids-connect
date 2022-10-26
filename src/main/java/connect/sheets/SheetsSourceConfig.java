@@ -69,6 +69,14 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
     public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 24 * 60 * 60; //24 h
 
+    public static final String SHEET_MEMBER_NAMES = "member.names";
+    public static final String SHEET_MEMBER_NAMES_CONFIG_DISPLAY = "Member names";
+    public static final String SHEET_MEMBER_NAMES_CONFIG_DOC = "Member names of the project to use when connecting to Google Sheets API";
+
+    public static final String SHEET_SPRINT_NAMES = "sprint.names";
+    public static final String SHEET_SPRINT_NAMES_CONFIG_DISPLAY = "Sprint names";
+    public static final String SHEET_SPRINT_NAMES_CONFIG_DOC = "Sprint names of the project to use when connecting to Google Sheets API";
+
     public static final String SHEET_GROUP = "SHEET";
 
 
@@ -172,7 +180,23 @@ public class SheetsSourceConfig extends AbstractConfig {
                         SHEET_GROUP,
                         12,
                         ConfigDef.Width.SHORT,
-                        SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY);
+                        SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY)
+                .define(SHEET_MEMBER_NAMES,
+                        ConfigDef.Type.STRING,
+                        ConfigDef.Importance.HIGH,
+                        SHEET_MEMBER_NAMES_CONFIG_DOC,
+                        SHEET_GROUP,
+                        13,
+                        ConfigDef.Width.LONG,
+                        SHEET_MEMBER_NAMES_CONFIG_DISPLAY)
+                .define(SHEET_SPRINT_NAMES,
+                        ConfigDef.Type.STRING,
+                        ConfigDef.Importance.HIGH,
+                        SHEET_SPRINT_NAMES_CONFIG_DOC,
+                        SHEET_GROUP,
+                        14,
+                        ConfigDef.Width.LONG,
+                        SHEET_SPRINT_NAMES_CONFIG_DISPLAY);
     }
 
     public SheetsSourceConfig(Map<String, String> originals) {
