@@ -19,11 +19,14 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-/* Class to demonstrate the use of Spreadsheet Get Values API */
 public class SheetsApi {
 
-
-
+	/**
+	 *
+	 * @param authorizationCredentials
+	 * @return
+	 * @throws AuthorizationCredentialsException
+	 */
 	public static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
 		if(authorizationCredentials != null) {
 			Gson gsonCredentials = new GsonBuilder()
@@ -36,6 +39,23 @@ public class SheetsApi {
 
 	}
 
+	/**
+	 * Create the sheets API client
+	 * @param credentials
+	 * @return sheets api client
+	 * @throws IOException
+	 */
+	private static Sheets getSheetsService(String credentials) throws IOException {
+		GoogleCredentials googleCredentials = GoogleCredentials.fromStream(new ByteArrayInputStream(credentials.getBytes()))
+				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
+		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
+		return new Sheets.Builder(new NetHttpTransport(),
+				GsonFactory.getDefaultInstance(),
+				requestInitializer)
+				.setApplicationName("Sheets samples")
+				.build();
+	}
+
 
 	/**
 	 * Returns a range of values from a spreadsheet.
@@ -46,11 +66,20 @@ public class SheetsApi {
 	 * @throws IOException - if credentials file not found.
 	 */
 	public static ValueRange getValues(String spreadsheetId, String range) throws AuthorizationCredentialsException, IOException {
-
-
 		String jsonCredentials = getJson(AuthorizationCredentials.getInstance());
-		Sheets service = getSheetsService(jsonCredentials);
+		Sheets sheetsService = getSheetsService(jsonCredentials);
+		return getValueRange(spreadsheetId, range, sheetsService);
+	}
 
+	/**
+	 *
+	 * @param spreadsheetId
+	 * @param range
+	 * @param service
+	 * @return
+	 * @throws IOException
+	 */
+	private static ValueRange getValueRange(String spreadsheetId, String range, Sheets service) throws IOException {
 		ValueRange result = null;
 		try {
 			// Gets the values of the cells in the specified range.
@@ -69,23 +98,7 @@ public class SheetsApi {
 		return result;
 	}
 
-	/**
-	 * Create the sheets API client
-	 * @param credentials
-	 * @return sheets api client
-	 * @throws IOException
-	 */
-	private static Sheets getSheetsService(String credentials) throws IOException {
-		GoogleCredentials googleCredentials = GoogleCredentials.fromStream(new ByteArrayInputStream(credentials.getBytes()))
-				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
-		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
-		return new Sheets.Builder(new NetHttpTransport(),
-				GsonFactory.getDefaultInstance(),
-				requestInitializer)
-				.setApplicationName("Sheets samples")
-				.build();
 
-	}
 }
 
 
