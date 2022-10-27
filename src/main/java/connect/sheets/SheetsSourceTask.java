@@ -1,13 +1,16 @@
 package connect.sheets;
 
+import com.beust.ah.A;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class SheetsSourceTask extends SourceTask {
@@ -31,13 +34,12 @@ public class SheetsSourceTask extends SourceTask {
     @Override
     public void start(Map<String, String> properties) {
         sheetLogger.info("connect-sheets: start");
-
-
         initializeAuthorizationCredentials(properties);
-        initializeSpreadsheet(properties);
-
-
-        sheetLogger.info(properties.toString());
+        try {
+            initializeSpreadsheet(properties);
+        } catch (IOException | AuthorizationCredentialsException e) {
+            throw new RuntimeException(e);
+        }
 
         lastPollTime = 0L;
         if(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT == null) {
@@ -66,23 +68,37 @@ public class SheetsSourceTask extends SourceTask {
                 properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL));
     }
 
-    private void initializeSpreadsheet(final Map<String, String> properties) {
+    private void initializeSpreadsheet(final Map<String, String> properties) throws IOException, AuthorizationCredentialsException {
         sheetLogger.info("connect-sheets: Initialize Spreadsheet");
         memberNames = properties.get(SheetsSourceConfig.SHEET_MEMBER_NAMES);
         sprintNames = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
-        if(SheetsSourceConfig.SPREADSHEET_ID == null) {
-            createSpreadsheet(properties);
+        if(SheetsSourceConfig.SPREADSHEET_ID == null
+                || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
+            spreadSheetId = createSpreadsheet(properties);
+            createSheets();
+            shareSpreadsheet();
         } else {
             sheetLogger.info("connect-sheets: Spreadsheet exists");
             spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
         }
     }
 
-    private void createSpreadsheet(final Map <String, String> properties) {
+
+    private String createSpreadsheet(final Map <String, String> properties) throws IOException, AuthorizationCredentialsException {
+        sheetLogger.info("connect-sheets: Create new Spreadsheet");
+        return SheetsApi.createSpreadsheet("Titulo prueba");
+    }
+
+    private void shareSpreadsheet() {
 
     }
 
-
+    private void createSheets() throws IOException, AuthorizationCredentialsException {
+        sheetLogger.info("connect-sheets: Create new Sheets");
+        ArrayList<String> sheetTitles = new ArrayList<>();
+        sheetTitles.add("Prueba");
+        SheetsApi.createSheets(spreadSheetId, sheetTitles);
+    }
     private boolean lostConnection() {
         return System.currentTimeMillis() < (lastPollTime + (1000));
     }
