@@ -77,6 +77,15 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_SPRINT_NAMES_CONFIG_DISPLAY = "Sprint names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DOC = "Sprint names of the project to use when connecting to Google Sheets API";
 
+    public static final String SHEET_TEAM_NAME = "team.name";
+    public static final String SHEET_TEAM_NAME_CONFIG_DISPLAY = "Team name";
+    public static final String SHEET_TEAM_NAME_CONFIG_DOC = "Team name of the project";
+
+
+    public static final String SHEET_HOUR_TOPIC_CONFIG = "hour.topic";
+    public static final String SHEET_HOUR_TOPIC_CONFIG_DISPLAY = "Topic to persist spreadsheet hours.";
+    public static final String SHEET_HOUR_TOPIC_CONFIG_DOC = "Topic to persist spreadsheet hours.";
+    public static final String SHEET_HOUR_TOPIC_CONFIG_DEFAULT = "hour.topic";
     public static final String SHEET_GROUP = "SHEET";
 
 
@@ -196,7 +205,24 @@ public class SheetsSourceConfig extends AbstractConfig {
                         SHEET_GROUP,
                         14,
                         ConfigDef.Width.LONG,
-                        SHEET_SPRINT_NAMES_CONFIG_DISPLAY);
+                        SHEET_SPRINT_NAMES_CONFIG_DISPLAY)
+                .define(SHEET_HOUR_TOPIC_CONFIG,
+                        ConfigDef.Type.STRING,
+                        SHEET_HOUR_TOPIC_CONFIG_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SHEET_HOUR_TOPIC_CONFIG_DOC,
+                        SHEET_GROUP,
+                        15,
+                        ConfigDef.Width.LONG,
+                        SHEET_HOUR_TOPIC_CONFIG_DISPLAY)
+                .define(SHEET_TEAM_NAME,
+                        ConfigDef.Type.STRING,
+                        ConfigDef.Importance.LOW,
+                        SHEET_TEAM_NAME_CONFIG_DOC,
+                        SHEET_GROUP,
+                        15,
+                        ConfigDef.Width.LONG,
+                        SHEET_TEAM_NAME_CONFIG_DISPLAY);
     }
 
     public SheetsSourceConfig(Map<String, String> originals) {

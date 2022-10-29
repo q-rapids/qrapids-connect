@@ -7,6 +7,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.SheetProperties;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -19,6 +20,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
 
 public class SheetsApi {
 
@@ -46,8 +49,8 @@ public class SheetsApi {
 		BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest();
 		requestBody.setIncludeSpreadsheetInResponse(false);
 		List<Request> requestList= new ArrayList<>();
-		for(int i = 0; i < sheetTitles.size(); ++i) {
-			String sheetTitle = sheetTitles.get(i);
+		for(int i = 1; i < sheetTitles.size() + 1; ++i) {
+			String sheetTitle = sheetTitles.get(i-1);
 			Request request = createSheetRequest(sheetTitle, i);
 			requestList.add(request);
 		}
@@ -55,7 +58,7 @@ public class SheetsApi {
 		doBatchRequest(spreadSheetId, requestBody);
 	}
 
-	private static Request createSheetRequest(String sheetTitle, Integer sheetId) {
+	private static Request createSheetRequest(final String sheetTitle, final Integer sheetId) {
 		Request request = new Request();
 		AddSheetRequest addSheetRequest = new AddSheetRequest();
 		SheetProperties sheetProperties = new SheetProperties();
@@ -68,10 +71,50 @@ public class SheetsApi {
 
 	private static void doBatchRequest(String spreadSheetId, BatchUpdateSpreadsheetRequest requestBody) throws IOException, AuthorizationCredentialsException {
 		Sheets service = getSheetsService();
-		Sheets.Spreadsheets.BatchUpdate request =
-				service.spreadsheets().batchUpdate(spreadSheetId, requestBody);
+		Sheets.Spreadsheets.BatchUpdate request = service.spreadsheets().batchUpdate(spreadSheetId, requestBody);
 		BatchUpdateSpreadsheetResponse response = request.execute();
-		System.out.println(response.getSpreadsheetId());
+	}
+	private static Sheets getSheetsService() throws AuthorizationCredentialsException, IOException {
+		if (sheetsService == null) {
+			String jsonCredentials = getJson(AuthorizationCredentials.getInstance());
+			return createSheetsApiClient(jsonCredentials);
+		} else {
+			return sheetsService;
+		}
+	}
+
+	/**
+	 *
+	 * @param authorizationCredentials
+	 * @return
+	 * @throws AuthorizationCredentialsException
+	 */
+	private static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
+		if(authorizationCredentials != null) {
+			Gson gsonCredentials = new GsonBuilder()
+					.excludeFieldsWithoutExposeAnnotation()
+					.create();
+			return gsonCredentials.toJson(authorizationCredentials);
+		} else {
+			throw new AuthorizationCredentialsException("No authorization credentials detected");
+		}
+	}
+
+	/**
+	 * Create the sheets API client
+	 * @param credentials
+	 * @return sheets api client
+	 * @throws IOException
+	 */
+	private static Sheets createSheetsApiClient(String credentials) throws IOException {
+		GoogleCredentials googleCredentials = GoogleCredentials.fromStream(new ByteArrayInputStream(credentials.getBytes()))
+				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
+		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
+		return new Sheets.Builder(new NetHttpTransport(),
+				GsonFactory.getDefaultInstance(),
+				requestInitializer)
+				.setApplicationName("Sheets samples")
+				.build();
 	}
 
 	/**
@@ -102,49 +145,43 @@ public class SheetsApi {
 		return result;
 	}
 
-	private static Sheets getSheetsService() throws AuthorizationCredentialsException, IOException {
-		if (sheetsService == null) {
-			String jsonCredentials = getJson(AuthorizationCredentials.getInstance());
-			return createSheetsApiClient(jsonCredentials);
-		} else {
-			return sheetsService;
+	public static String getSheetId(final String sprintName, final String spreadSheetId) {
+		// TODO investigate API
+		return "0";
+	}
+
+
+	public static Double getHoursDone(final Integer developerPosition,
+									   final String sprint,
+									   final String spreadSheetId) throws AuthorizationCredentialsException, IOException {
+		Sheets service = getSheetsService();
+		ValueRange result;
+		Double hours = 0.0;
+		Integer position = developerPosition + 10;
+		try {
+			// Gets the values of the cells in the specified range.
+			String range = sprint+"!"+"J"+Integer.toString(position);
+			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			int numRows = result.getValues() != null ? result.getValues().size() : 0;
+			if (numRows != 0) {
+				String hoursString = result.getValues().get(0).toString();
+				hoursString = hoursString.substring(1, result.getValues().get(0).toString().length() - 1);
+				hoursString = hoursString.replace(",", ".");
+				hours = Double.parseDouble(hoursString);
+			}
+		} catch (GoogleJsonResponseException e) {
+			// TODO(developer) - handle error appropriately
+			GoogleJsonError error = e.getDetails();
+			if (error.getCode() == 404) {
+				System.out.printf("Spreadsheet not found with id '%s'.\n", spreadSheetId);
+			} else {
+				throw e;
+			}
 		}
+		return hours;
 	}
 
-	/**
-	 *
-	 * @param authorizationCredentials
-	 * @return
-	 * @throws AuthorizationCredentialsException
-	 */
-	private static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
-		if(authorizationCredentials != null) {
-			Gson gsonCredentials = new GsonBuilder()
-					.excludeFieldsWithoutExposeAnnotation()
-					.create();
-			return gsonCredentials.toJson(authorizationCredentials);
-		} else {
-			throw new AuthorizationCredentialsException("No authorization credentials detected");
-		}
 
-	}
-
-	/**
-	 * Create the sheets API client
-	 * @param credentials
-	 * @return sheets api client
-	 * @throws IOException
-	 */
-	private static Sheets createSheetsApiClient(String credentials) throws IOException {
-		GoogleCredentials googleCredentials = GoogleCredentials.fromStream(new ByteArrayInputStream(credentials.getBytes()))
-				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
-		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
-		return new Sheets.Builder(new NetHttpTransport(),
-				GsonFactory.getDefaultInstance(),
-				requestInitializer)
-				.setApplicationName("Sheets samples")
-				.build();
-	}
 
 
 

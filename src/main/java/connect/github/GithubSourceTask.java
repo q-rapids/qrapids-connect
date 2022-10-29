@@ -81,7 +81,57 @@ public class GithubSourceTask extends SourceTask {
 		}
 		return null;
 	}
+	@Override
+	public void start(Map<String, String> props) {
 
+		commitMostRecentUpdate = new HashMap<>();
+
+		log.info("connect-github: start");
+		log.info(props.toString());
+
+		String aux		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
+
+		githubUrls = aux.split(",");
+
+		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
+		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
+		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
+		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
+		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
+		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
+		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
+		taiga_topic		= props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
+
+		for(String url : githubUrls) log.info("github.url: " + url);
+		log.info("github.created.since: " + createdSince);
+		log.info("github.interval.seconds: " + githubInterval);
+
+		log.info("github.issue.topic: " + issue_topic);
+		log.info("github.commit.topic: " + commit_topic);
+
+		if ( (githubInterval == null || githubInterval.isEmpty()) ) {
+			interval = 3600;
+		} else {
+			interval = Integer.parseInt(githubInterval);
+		}
+
+		// offsets present?
+		Map<String,String> sourcePartition = new HashMap<>();
+		sourcePartition.put( "githubUrl", githubUrls[0] );
+
+		if ( context != null ) {
+			Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
+			if (offset != null ) {
+				try {
+					issueMostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
+					log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
 
@@ -101,7 +151,7 @@ public class GithubSourceTask extends SourceTask {
 
 		// if mostRecentUpdate is available from offset -> storage use it
 
-		if(firstPoll){
+		if(Boolean.TRUE.equals(firstPoll)){
 			try{
 				defaultDate = onlyDate.parse(createdSince);
 				issueMostRecentUpdate = onlyDate.parse(createdSince);
@@ -122,7 +172,6 @@ public class GithubSourceTask extends SourceTask {
 
 
 		//issues
-
 		/*
 		int offset = 1;
 		GithubIssues redmineIssues;
@@ -145,8 +194,6 @@ public class GithubSourceTask extends SourceTask {
         issueMostRecentUpdate = issue_maxUpdatedOn;
 
  		*/
-
-
 
 		//commits
 		try {
@@ -397,7 +444,6 @@ public class GithubSourceTask extends SourceTask {
 			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, i.sha, GithubSchema.githubCommit , commit);
 			result.add(sr);
         }
-
         return result;
     }
 
@@ -485,57 +531,7 @@ public class GithubSourceTask extends SourceTask {
 
  */
 	
-	@Override
-	public void start(Map<String, String> props) {
 
-		commitMostRecentUpdate = new HashMap<>();
-
-		log.info("connect-github: start");
-		log.info(props.toString());
-
-		String aux		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
-
-		githubUrls = aux.split(",");
-
-		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
-		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
-		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
-		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
-		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
-		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
-		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
-		taiga_topic		= props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
-		
-		for(String url : githubUrls) log.info("github.url: " + url);
-		log.info("github.created.since: " + createdSince);
-		log.info("github.interval.seconds: " + githubInterval);
-
-		log.info("github.issue.topic: " + issue_topic);
-		log.info("github.commit.topic: " + commit_topic);
-		
-		if ( (githubInterval == null || githubInterval.isEmpty()) ) {
-			interval = 3600;
-		} else {
-			interval = Integer.parseInt(githubInterval);
-		}
-
-		// offsets present?
-		Map<String,String> sourcePartition = new HashMap<>();
-		sourcePartition.put( "githubUrl", githubUrls[0] );
-
-        if ( context != null ) {
-            Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
-            if (offset != null ) {
-                try {
-                    issueMostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
-                    log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
-                } catch (ParseException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
-	}
 
 	@Override
 	public void stop() {
