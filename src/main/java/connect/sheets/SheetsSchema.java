@@ -30,21 +30,25 @@ public class SheetsSchema {
 	public static String FIELD_DEVELOPER_TIME = "total_hours";
 
 
-	public static Schema imputationSchema = SchemaBuilder.struct().name("imputation_times")
+	public static Schema imputationSchema = SchemaBuilder.struct().name("imputation")
 			.field(FIELD_SHEET_ID, Schema.STRING_SCHEMA)
 			.field(FIELD_SPRINT_NAME, Schema.STRING_SCHEMA)
-			.field(FIELD_DEVELOPER_TIME, Schema.STRING_SCHEMA);
+			.field(FIELD_DEVELOPER_TIME, Schema.STRING_SCHEMA)
+			.build();
 
-	public static Schema developerSchema = SchemaBuilder.struct().name("developer_info")
-			.field(FIELD_DEVELOPER_NAME, Schema.STRING_SCHEMA)
-			.field(FIELD_IMPUTATION_TIMES, imputationSchema);
+	public static Schema developer =
+			SchemaBuilder.struct().name("developer_info")
+					.field(FIELD_DEVELOPER_NAME, Schema.STRING_SCHEMA)
+					.field(FIELD_IMPUTATION_TIMES, SchemaBuilder.array(imputationSchema).build())
+					.build();
 
-	public static Schema sheetSchema =  SchemaBuilder.struct().name("sheets_data")
+	public static Schema sheetSchema =
+			SchemaBuilder.struct().name("sheets_data")
 			.field(FIELD_ID, Schema.STRING_SCHEMA)
 			.field(FIELD_TEAM_NAME, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SPREADSHEET_ID, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_TIME, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(FIELD_DEVELOPER_INFO, developerSchema)
+			.field(FIELD_DEVELOPER_INFO, SchemaBuilder.array(developer).build())
 			.build();
 
 }

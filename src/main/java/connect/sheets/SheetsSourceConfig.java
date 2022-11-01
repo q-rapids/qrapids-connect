@@ -18,9 +18,7 @@ import java.util.Map;
 public class SheetsSourceConfig extends AbstractConfig {
 
 
-    public static final String SPREADSHEET_ID = "spreadsheet.id";
-    public static final String SPREADSHEET_ID_CONFIG_DISPLAY = "Spreadsheet ID";
-    public static final String SPREADSHEET_ID_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
+    /*----Authentication----*/
 
     public static final String SHEET_TYPE = "sheet.type";
     public static final String SHEET_TYPE_CONFIG_DISPLAY = "Connection type";
@@ -38,7 +36,6 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_PRIVATE_KEY_CONFIG_DISPLAY = "Private Key";
     public static final String SHEET_PRIVATE_KEY_CONFIG_DOC = "Private key to use when connecting to Google Sheets API.";
 
-
     public static final String SHEET_CLIENT_EMAIL = "client.email";
     public static final String SHEET_CLIENT_EMAIL_CONFIG_DISPLAY = "Client email";
     public static final String SHEET_CLIENT_EMAIL_CONFIG_DOC = "Client email to use when connecting to Google Sheets API.";
@@ -46,7 +43,6 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_CLIENT_ID = "client.id";
     public static final String SHEET_CLIENT_ID_CONFIG_DISPLAY = "Client ID";
     public static final String SHEET_CLIENT_ID_CONFIG_DOC = "Client ID to use when connecting to Google Sheets API.";
-
 
     public static final String SHEET_AUTH_URI = "auth.uri";
     public static final String SHEET_AUTH_URI_CONFIG_DISPLAY = "Authorization URI";
@@ -63,44 +59,50 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_CLIENT_CERTIFICATION_URL = "client.x509.cert.url";
     public static final String SHEET_CLIENT_CERTIFICATION_URL_CONFIG_DISPLAY = "Client authorization URL";
     public static final String SHEET_CLIENT_CERTIFICATION_URL_CONFIG_DOC = "Client authorization URL to use when connecting to Google Sheets API.";
+    /*---------------------*/
 
-    public static final String SHEET_INTERVAL_SECONDS_CONFIG = "sheet.interval.seconds";
-    public static final String SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
-    public static final String SHEET_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
-    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 24 * 60 * 60; //24 h
-
-    public static final String SHEET_MEMBER_NAMES = "member.names";
-    public static final String SHEET_MEMBER_NAMES_CONFIG_DISPLAY = "Member names";
-    public static final String SHEET_MEMBER_NAMES_CONFIG_DOC = "Member names of the project to use when connecting to Google Sheets API";
+    /*----Subject Information----*/
+    public static final String SPREADSHEET_IDS = "spreadsheet.ids";
+    public static final String SPREADSHEET_IDS_CONFIG_DISPLAY = "Spreadsheet IDs";
+    public static final String SPREADSHEET_IDS_CONFIG_DOC = "Spreadsheet IDs to use when connecting to Google Sheets API.";
 
     public static final String SHEET_SPRINT_NAMES = "sprint.names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DISPLAY = "Sprint names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DOC = "Sprint names of the project to use when connecting to Google Sheets API";
 
-    public static final String SHEET_TEAM_NAME = "team.name";
-    public static final String SHEET_TEAM_NAME_CONFIG_DISPLAY = "Team name";
-    public static final String SHEET_TEAM_NAME_CONFIG_DOC = "Team name of the project";
+    public static final String SHEET_TEAM_NAMES = "team.names";
+    public static final String SHEET_TEAM_NAMES_CONFIG_DISPLAY = "Team names";
+    public static final String SHEET_TEAM_NAMES_CONFIG_DOC = "Team names of the project";
 
+    public static final String SHEET_TEAM_NUMBER_MEMBERS = "team.number.members";
+    public static final String SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DISPLAY = "Number of members";
+    public static final String SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DOC = "Number of members of the project to use when connecting to Google Sheets API";
+    /*---------------------*/
 
-    public static final String SHEET_HOUR_TOPIC_CONFIG = "hour.topic";
+    /*---- Kafka ----*/
+    public static final String SHEET_GROUP = "SHEET";
+    public static final String SHEET_HOUR_TOPIC_CONFIG = "hours.topic";
     public static final String SHEET_HOUR_TOPIC_CONFIG_DISPLAY = "Topic to persist spreadsheet hours.";
     public static final String SHEET_HOUR_TOPIC_CONFIG_DOC = "Topic to persist spreadsheet hours.";
     public static final String SHEET_HOUR_TOPIC_CONFIG_DEFAULT = "hour.topic";
-    public static final String SHEET_GROUP = "SHEET";
-
+    public static final String SHEET_INTERVAL_SECONDS_CONFIG = "sheet.interval.seconds";
+    public static final String SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
+    public static final String SHEET_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
+    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 24 * 60 * 60; //24 h
+    /*---------------------*/
 
     public static final ConfigDef DEFS = new ConfigDef();
 
     static {
         DEFS
-                .define(SPREADSHEET_ID,
+                .define(SPREADSHEET_IDS,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
-                        SPREADSHEET_ID_CONFIG_DOC,
+                        SPREADSHEET_IDS_CONFIG_DOC,
                         SHEET_GROUP,
                         1,
                         ConfigDef.Width.SHORT,
-                        SPREADSHEET_ID_CONFIG_DISPLAY)
+                        SPREADSHEET_IDS_CONFIG_DISPLAY)
                 .define(SHEET_TYPE,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
@@ -190,14 +192,14 @@ public class SheetsSourceConfig extends AbstractConfig {
                         12,
                         ConfigDef.Width.SHORT,
                         SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY)
-                .define(SHEET_MEMBER_NAMES,
+                .define(SHEET_TEAM_NUMBER_MEMBERS,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
-                        SHEET_MEMBER_NAMES_CONFIG_DOC,
+                        SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DOC,
                         SHEET_GROUP,
                         13,
                         ConfigDef.Width.LONG,
-                        SHEET_MEMBER_NAMES_CONFIG_DISPLAY)
+                        SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DISPLAY)
                 .define(SHEET_SPRINT_NAMES,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
@@ -215,14 +217,14 @@ public class SheetsSourceConfig extends AbstractConfig {
                         15,
                         ConfigDef.Width.LONG,
                         SHEET_HOUR_TOPIC_CONFIG_DISPLAY)
-                .define(SHEET_TEAM_NAME,
+                .define(SHEET_TEAM_NAMES,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.LOW,
-                        SHEET_TEAM_NAME_CONFIG_DOC,
+                        SHEET_TEAM_NAMES_CONFIG_DOC,
                         SHEET_GROUP,
                         15,
                         ConfigDef.Width.LONG,
-                        SHEET_TEAM_NAME_CONFIG_DISPLAY);
+                        SHEET_TEAM_NAMES_CONFIG_DISPLAY);
     }
 
     public SheetsSourceConfig(Map<String, String> originals) {

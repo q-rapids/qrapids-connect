@@ -1,7 +1,6 @@
 package connect.sheets;
 
 
-import com.beust.ah.A;
 import model.sheets.Developer;
 import model.sheets.TeamInformation;
 import model.sheets.TimeInputation;
@@ -11,9 +10,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import java.io.IOException;
-import java.sql.Time;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
@@ -33,12 +30,13 @@ public class SheetsSourceTask extends SourceTask {
 
     private Date lastDataRetreived;
 
-    private String teamName;
+    private String[] spreadSheetIds;
 
+    private String actualSpreadSheet;
 
-    private String spreadSheetId;
+    private String[] numberDevelopersPerTeam;
 
-    private String[] developers;
+    private String[] teamNames;
 
     private String[] sprints;
     private String timeTopic;
@@ -60,19 +58,19 @@ public class SheetsSourceTask extends SourceTask {
                 properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL),
                 properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL));
     }
-    private void initializeConfigurations(Map<String, String> properties) {
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
+    private void initializeConfigurations(final Map<String, String> properties) {
         timeTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
         pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
+        String spreadSheetIdsAux = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
+        spreadSheetIds = spreadSheetIdsAux.split(",");
         String sprintsConfig = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
         sprints = sprintsConfig.split(",");
-        String developersConfig = properties.get(SheetsSourceConfig.SHEET_MEMBER_NAMES);
-        developers = developersConfig.split(",");
-        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
+        String memberNumber = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
+        numberDevelopersPerTeam = memberNumber.split(",");
+        String teamNamesAux = properties.get(SheetsSourceConfig.SHEET_TEAM_NAMES);
+        teamNames = teamNamesAux.split(",");
+
     }
-
-
-
     private void setPollConfiguration() {
         lastPollTime = 0L;
         if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) {
@@ -83,26 +81,25 @@ public class SheetsSourceTask extends SourceTask {
         }
     }
 
-
     private boolean lostConnection() {
         return System.currentTimeMillis() < (lastPollTime + (1000));
     }
 
-    private TeamInformation getTeamInformation() {
+    private TeamInformation getTeamInformation(final String name) {
         TeamInformation teamInformation = new TeamInformation();
         teamInformation.id = UUID.randomUUID();
-        teamInformation.teamName = teamName;
-        teamInformation.spreadsheetId = spreadSheetId;
+        teamInformation.teamName = name;
+        teamInformation.spreadsheetId = actualSpreadSheet;
         teamInformation.time = String.valueOf(System.currentTimeMillis());
         return teamInformation;
     }
 
-    private SourceRecord generateTeamRecords() throws AuthorizationCredentialsException, IOException {
-        TeamInformation teamInformation = getTeamInformation();
+    private SourceRecord generateTeamRecords(final String name, final Integer teamNumber) throws AuthorizationCredentialsException, IOException {
+        TeamInformation teamInformation = getTeamInformation(name);
         ArrayList<Developer> developersInformation = new ArrayList<>();
         for(int developerPosition = 0;
-            developerPosition < developers.length; ++developerPosition) {
-            String developerName = developers[developerPosition];
+            developerPosition < Integer.parseInt(numberDevelopersPerTeam[teamNumber]); ++developerPosition) {
+            String developerName = SheetsApi.getDeveloperName(developerPosition, actualSpreadSheet);
             Developer developerInformation = getDeveloperInformation(developerPosition, developerName);
             developersInformation.add(developerInformation);
         }
@@ -110,7 +107,9 @@ public class SheetsSourceTask extends SourceTask {
         return getSheetSourceRecord(teamInformation);
     }
 
-    private Developer getDeveloperInformation(final Integer developerPosition, final String name) throws AuthorizationCredentialsException, IOException {
+    private Developer getDeveloperInformation(final Integer developerPosition,
+                                              final String name)
+                                              throws AuthorizationCredentialsException, IOException {
         Developer developer = new Developer();
         developer.developerName = name;
         ArrayList<TimeInputation> developerTimeImputations = new ArrayList<>();
@@ -125,9 +124,9 @@ public class SheetsSourceTask extends SourceTask {
     private TimeInputation getDeveloperTimeImputation(final Integer developerPosition,
                                                       final String sprintName) throws AuthorizationCredentialsException, IOException {
         TimeInputation timeInputation = new TimeInputation();
-        timeInputation.sheetId = SheetsApi.getSheetId(sprintName, spreadSheetId);
+        timeInputation.sheetId = SheetsApi.getSheetId(sprintName, actualSpreadSheet);
         timeInputation.sprintName = sprintName;
-        timeInputation.sprintHours = SheetsApi.getHoursDone(developerPosition, sprintName, spreadSheetId);
+        timeInputation.sprintHours = SheetsApi.getHoursDone(developerPosition, sprintName, actualSpreadSheet);
         return timeInputation;
     }
 
@@ -142,7 +141,7 @@ public class SheetsSourceTask extends SourceTask {
         initializeAuthorizationCredentials(properties);
         initializeConfigurations(properties);
         setPollConfiguration();
-
+        /*
         Map<String,String> sourcePartition = new HashMap<>();
         //sourcePartition.put( "githubUrl", githubUrls[0] );
         if (context != null) {
@@ -156,7 +155,7 @@ public class SheetsSourceTask extends SourceTask {
                     e.printStackTrace();
                 }
             }
-        }
+        }*/
     }
 
     @Override
@@ -170,7 +169,12 @@ public class SheetsSourceTask extends SourceTask {
         }
         lastPollTime = System.currentTimeMillis();
         try {
-            records.add(generateTeamRecords());
+            for (int i = 0; i < teamNames.length; ++i) {
+                String team = teamNames[i];
+                Integer teamNumber = i;
+                actualSpreadSheet = spreadSheetIds[i];
+                records.add(generateTeamRecords(team, teamNumber));
+            }
         } catch (AuthorizationCredentialsException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -186,16 +190,27 @@ public class SheetsSourceTask extends SourceTask {
         Map<String, String> sourceOffset = new HashMap<>();
         sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
 
-        Struct imputation = new Struct(SheetsSchema.imputationSchema);
-
-        Struct developer = new Struct(SheetsSchema.developerSchema);
-
-        Struct information = new Struct(SheetsSchema.sheetSchema);
-        information.put(SheetsSchema.FIELD_ID, teamInformation.id.toString());
-        information.put(SheetsSchema.FIELD_TEAM_NAME, teamInformation.teamName);
-        information.put(SheetsSchema.FIELD_SPREADSHEET_ID, spreadSheetId);
-        information.put(SheetsSchema.FIELD_TIME, teamInformation.time);
-        information.put(SheetsSchema.FIELD_DEVELOPER_INFO, teamInformation.developerInfo);
+        Struct teamData = new Struct(SheetsSchema.sheetSchema);
+        teamData.put(SheetsSchema.FIELD_ID, teamInformation.id.toString());
+        teamData.put(SheetsSchema.FIELD_TEAM_NAME, teamInformation.teamName);
+        teamData.put(SheetsSchema.FIELD_SPREADSHEET_ID, actualSpreadSheet);
+        teamData.put(SheetsSchema.FIELD_TIME, teamInformation.time);
+        Vector<Struct> developers = new Vector<>();
+        for (Developer developerInfo : teamInformation.developerInfo) {
+            Struct developerData = new Struct(SheetsSchema.developer);
+            developerData.put(SheetsSchema.FIELD_DEVELOPER_NAME, developerInfo.developerName);
+            Vector<Struct> developerImputations = new Vector<>();
+            for (TimeInputation timeInputation : developerInfo.timeInputations) {
+                Struct imputation = new Struct(SheetsSchema.imputationSchema);
+                imputation.put(SheetsSchema.FIELD_SHEET_ID, timeInputation.sheetId);
+                imputation.put(SheetsSchema.FIELD_SPRINT_NAME, timeInputation.sprintName);
+                imputation.put(SheetsSchema.FIELD_DEVELOPER_TIME, String.valueOf(timeInputation.sprintHours));
+                developerImputations.add(imputation);
+            }
+            developerData.put(SheetsSchema.FIELD_IMPUTATION_TIMES, developerImputations);
+            developers.add(developerData);
+        }
+        teamData.put(SheetsSchema.FIELD_DEVELOPER_INFO, developers);
         return new SourceRecord(
                 sourcePartition,
                 sourceOffset,
@@ -203,7 +218,7 @@ public class SheetsSourceTask extends SourceTask {
                 Schema.STRING_SCHEMA,
                 teamInformation.id, //uuid as elasticsearch index
                 Schema.STRING_SCHEMA,
-                information);
+                teamData);
     }
 
     @Override

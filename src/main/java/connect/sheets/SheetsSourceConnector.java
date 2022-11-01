@@ -15,15 +15,16 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private String pollInterval;
 
-    private String spreadSheetId;
+    private String spreadSheetIds;
 
-    private String memberNames;
+    private String memberNumber;
 
     private String sprintNames;
 
     private String sheetHourTopic;
 
-    private String teamName;
+    private String teamNames;
+
     private final Logger connectorLogger = Logger.getLogger(SheetsSourceConnector.class.getName());
 
     @Override
@@ -34,11 +35,11 @@ public class SheetsSourceConnector extends SourceConnector {
     @Override
     public void start(Map<String, String> properties) {
         pollInterval = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
-        memberNames =  properties.get(SheetsSourceConfig.SHEET_MEMBER_NAMES);
+        spreadSheetIds = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
+        memberNumber =  properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
         sprintNames =  properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
         sheetHourTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
-        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
+        teamNames = properties.get(SheetsSourceConfig.SHEET_TEAM_NAMES);
         authorizationCredentials = AuthorizationCredentials.getInstance(
                 properties.get(SheetsSourceConfig.SHEET_TYPE),
                 properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
@@ -60,11 +61,11 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private void initializeSpreadsheet(final Map<String, String> properties) throws IOException, AuthorizationCredentialsException {
         connectorLogger.info("connect-sheets // CONNECTOR: Initialize Spreadsheet");
-        memberNames = properties.get(SheetsSourceConfig.SHEET_MEMBER_NAMES);
+        memberNumber = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
         sprintNames = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
-        if(SheetsSourceConfig.SPREADSHEET_ID == null
-                || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
-            throw new ConnectException("SheetsConnector configuration must include spreadsheet.id setting");
+        if(SheetsSourceConfig.SPREADSHEET_IDS == null
+                || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_IDS), "")) {
+            throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
             /*
             TODO: automatize (almost done, remains sharing file to users)
             spreadSheetId = createSpreadsheet();
@@ -73,25 +74,11 @@ public class SheetsSourceConnector extends SourceConnector {
             */
         } else {
             connectorLogger.info("connect-sheets // CONNECTOR: Spreadsheet exists");
-            spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
+            spreadSheetIds = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
         }
     }
 
-    private String createSpreadsheet() throws IOException, AuthorizationCredentialsException {
-        connectorLogger.info("connect-sheets // CONNECTOR:: Create new Spreadsheet");
-        return SheetsApi.createSpreadsheet("Titulo prueba");
-    }
 
-    private void shareSpreadsheet() throws AuthorizationCredentialsException, IOException {
-        DriveApi.shareFile(spreadSheetId, "maxtiessler@estudiantat.upc.edu", "owner");
-    }
-
-    private void createSheets() throws IOException, AuthorizationCredentialsException {
-        connectorLogger.info("connect-sheets // CONNECTOR:: Create new Sheets");
-        ArrayList<String> sheetTitles = new ArrayList<>();
-        sheetTitles.add("Prueba");
-        SheetsApi.createSheets(spreadSheetId, sheetTitles);
-    }
     @Override
     public Class<? extends Task> taskClass() {
         return SheetsSourceTask.class;
@@ -100,11 +87,10 @@ public class SheetsSourceConnector extends SourceConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int i) {
         ArrayList<Map<String, String>> configurationList = new ArrayList<>();
-
         Map<String, String> configuration = new HashMap<>();
-        configuration.put(SheetsSourceConfig.SPREADSHEET_ID, spreadSheetId);
+        configuration.put(SheetsSourceConfig.SPREADSHEET_IDS, spreadSheetIds);
         configuration.put(SheetsSourceConfig.SHEET_SPRINT_NAMES, sprintNames);
-        configuration.put(SheetsSourceConfig.SHEET_MEMBER_NAMES, memberNames);
+        configuration.put(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS, memberNumber);
         configuration.put(SheetsSourceConfig.SHEET_PROJECT_ID, authorizationCredentials.getProject_id());
         configuration.put(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID, authorizationCredentials.getPrivate_key_id());
         configuration.put(SheetsSourceConfig.SHEET_PRIVATE_KEY, authorizationCredentials.getPrivate_key());
@@ -116,7 +102,7 @@ public class SheetsSourceConnector extends SourceConnector {
         configuration.put(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL, authorizationCredentials.getClient_x509_cert_url());
         configuration.put(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG, "" + pollInterval);
         configuration.put(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG, sheetHourTopic);
-        configuration.put(SheetsSourceConfig.SHEET_TEAM_NAME, teamName);
+        configuration.put(SheetsSourceConfig.SHEET_TEAM_NAMES, teamNames);
         configurationList.add(configuration);
         return configurationList;
     }

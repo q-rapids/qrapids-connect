@@ -182,9 +182,31 @@ public class SheetsApi {
 	}
 
 
-
-
-
+	public static String getDeveloperName(final Integer developerPosition, final String spreadSheetId) throws AuthorizationCredentialsException, IOException {
+		Sheets service = getSheetsService();
+		ValueRange result;
+		Integer position = developerPosition + 10;
+		try {
+			// Gets the values of the cells in the specified range.
+			String range = "I"+Integer.toString(position);
+			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			int numRows = result.getValues() != null ? result.getValues().size() : 0;
+			if (numRows != 0) {
+				String developerName = result.getValues().get(0).toString();
+				developerName = developerName.substring(1, result.getValues().get(0).toString().length() - 1);
+				return developerName;
+			}
+		} catch (GoogleJsonResponseException e) {
+			// TODO(developer) - handle error appropriately
+			GoogleJsonError error = e.getDetails();
+			if (error.getCode() == 404) {
+				System.out.printf("Spreadsheet not found with id '%s'.\n", spreadSheetId);
+			} else {
+				throw e;
+			}
+		}
+		return "anonymous";
+	}
 }
 
 
