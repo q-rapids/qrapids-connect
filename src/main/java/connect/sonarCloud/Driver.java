@@ -3,27 +3,26 @@
  * terms of the Apache License 2.0 license
  */
 
-package connect.sonarqube;
+package connect.sonarCloud;
+
+import org.apache.kafka.connect.source.SourceRecord;
+import util.PropertyFile;
 
 import java.util.List;
 import java.util.Map;
 
-import org.apache.kafka.connect.source.SourceRecord;
-
-import util.PropertyFile;
-
 
 /**
- * Run the SonarqubeSourceTask without Kafka
- * @author Axel Wickenkamp
+ * Run the SonarCloudSourceTask without Kafka
+ * @author Max Tiessler
  *
  */
 public class Driver {
 	
 	public static void main(String[] args) throws InterruptedException {
 		
-		Map<String,String> config = PropertyFile.get("./config/sonarCloud.properties");
-		SonarqubeSourceTask st = new SonarqubeSourceTask();
+		Map<String,String> config = PropertyFile.get("./config/connect-sonarCloud.properties");
+		SonarCloudSourceTask st = new SonarCloudSourceTask();
 		st.start(config);
 		
 		while(true) {

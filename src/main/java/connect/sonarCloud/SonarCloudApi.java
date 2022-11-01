@@ -1,12 +1,8 @@
-/* Copyright (C) 2019 Fraunhofer IESE
- * You may use, distribute and modify this code under the
- * terms of the Apache License 2.0 license
- */
 
-package connect.sonarqube;
+
+package connect.sonarCloud;
 
 import com.google.gson.Gson;
-
 import model.sonarqube.issues.SonarCloudIssuesResult;
 import model.sonarqube.measures.SonarCloudMeasuresResult;
 import rest.RESTInvoker;
@@ -16,7 +12,7 @@ import rest.RESTInvoker;
  * @author wickenkamp
  *
  */
-public class SonarqubeApi {
+public class SonarCloudApi {
 	
 	
 	public static SonarCloudMeasuresResult getMeasures(String sonarURL, String username, String password, String metricKeys, String sonarBaseComponentKey, int pageIndex) {

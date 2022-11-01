@@ -4,37 +4,30 @@
  * terms of the Apache License 2.0 license.
  */
 
-package connect.sonarqube;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.logging.Logger;
-
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.source.SourceRecord;
-import org.apache.kafka.connect.source.SourceTask;
+package connect.sonarCloud;
 
 import model.sonarqube.issues.Issue;
 import model.sonarqube.issues.SonarCloudIssuesResult;
 import model.sonarqube.measures.Component;
 import model.sonarqube.measures.Measure;
 import model.sonarqube.measures.SonarCloudMeasuresResult;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.source.SourceTask;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Kafka Connector Task for Sonarqube
  * @author Axel Wickenkamp
  *
  */
-public class SonarqubeSourceTask extends SourceTask {
+public class SonarCloudSourceTask extends SourceTask {
 
 	private static TimeZone tzUTC = TimeZone.getTimeZone("UTC");
 	private static DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
@@ -64,7 +57,7 @@ public class SonarqubeSourceTask extends SourceTask {
 	private long lastPoll = 0;
 
 	
-	private Logger log = Logger.getLogger(SonarqubeSourceTask.class.getName());
+	private Logger log = Logger.getLogger(SonarCloudSourceTask.class.getName());
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
@@ -92,7 +85,7 @@ public class SonarqubeSourceTask extends SourceTask {
 			SonarCloudIssuesResult iResult;
 			do {
 				page++;
-				iResult = SonarqubeApi.getIssues(sonarURL, sonarUser, sonarPass, sonarProjectKeys, page);
+				iResult = SonarCloudApi.getIssues(sonarURL, sonarUser, sonarPass, sonarProjectKeys, page);
 				records.addAll( getSonarIssueRecords(iResult, snapshotDateString) );
 			} while ( page*iResult.paging.pageSize < iResult.paging.total );
 			
@@ -104,7 +97,7 @@ public class SonarqubeSourceTask extends SourceTask {
 			SonarCloudMeasuresResult smr;
 			do {
 				page++;
-				smr = SonarqubeApi.getMeasures(sonarURL, sonarUser, sonarPass, sonarMetrics, sonarBaseComponentKey, page);
+				smr = SonarCloudApi.getMeasures(sonarURL, sonarUser, sonarPass, sonarMetrics, sonarBaseComponentKey, page);
 				records.addAll( getSonarMeasureRecords(smr, snapshotDateString) );
 			} while ( page * smr.paging.pageSize < smr.paging.total );
 			
@@ -122,36 +115,36 @@ public class SonarqubeSourceTask extends SourceTask {
 		
 			for ( Measure m : c.measures ) {
 			
-				Struct struct = new Struct( SonarqubeSchema.sonarmeasure );
-				struct.put(SonarqubeSchema.FIELD_SONAR_URL, sonarURL);
-				struct.put(SonarqubeSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
+				Struct struct = new Struct( SonarCloudSchema.sonarmeasure );
+				struct.put(SonarCloudSchema.FIELD_SONAR_URL, sonarURL);
+				struct.put(SonarCloudSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
 	
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, c.qualifier);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, c.path);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, c.language);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, c.qualifier);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, c.path);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, c.language);
 
 			
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
-				struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
+				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
 				
 				if ( m.value != null ) {
 					try {
 						float intvalue = Float.parseFloat(m.value);
-						struct.put(SonarqubeSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
+						struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
 					} catch ( NumberFormatException nfe ) {
 						nfe.printStackTrace();
 					}
 				}
 				Map<String,String> hm = new HashMap<String, String>();
 				hm.put("2", "2");
-				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarqubeSchema.sonarmeasure , struct);
+				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarCloudSchema.sonarmeasure , struct);
 
 				result.add(sr);
 			}
@@ -171,33 +164,33 @@ public class SonarqubeSourceTask extends SourceTask {
 		
 		for ( Issue i : iResult.issues) {
 		
-			Struct struct = new Struct( SonarqubeSchema.sonarissue );
-			struct.put(SonarqubeSchema.FIELD_SONAR_URL, sonarURL);
-			struct.put(SonarqubeSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
+			Struct struct = new Struct( SonarCloudSchema.sonarissue );
+			struct.put(SonarCloudSchema.FIELD_SONAR_URL, sonarURL);
+			struct.put(SonarCloudSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 			
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_SEVERITY, i.severity);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_COMPONENT, i.component);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_COMPONENTID, i.componentId);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_PROJECT, i.project);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_LINE, i.line);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_SEVERITY, i.severity);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_COMPONENT, i.component);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_COMPONENTID, i.componentId);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_PROJECT, i.project);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_LINE, i.line);
 			if ( i.textRange!= null ) {
-				struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_STARTLINE, i.textRange.startLine);
-				struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_STARTOFFSET, i.textRange.startOffset);
-				struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_ENDLINE, i.textRange.endLine);
-				struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_ENDOFFSET, i.textRange.endOffset);
+				struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_STARTLINE, i.textRange.startLine);
+				struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_STARTOFFSET, i.textRange.startOffset);
+				struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_ENDLINE, i.textRange.endLine);
+				struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_ENDOFFSET, i.textRange.endOffset);
 			}
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_STATUS, i.status);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_MESSAGE, i.message);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_EFFORT, i.effort);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_DEBT, i.debt);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_AUTHOR, i.author);
-			struct.put(SonarqubeSchema.FIELD_SONAR_ISSUE_CREATIONDATE, i.creationDate);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_STATUS, i.status);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_MESSAGE, i.message);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_EFFORT, i.effort);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_DEBT, i.debt);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_AUTHOR, i.author);
+			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_CREATIONDATE, i.creationDate);
 
 			Map<String,String> m = new HashMap<String, String>();
 			m.put("2", "2");
 			
-			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarqubeSchema.sonarissue , struct);
+			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarCloudSchema.sonarissue , struct);
 			result.add(sr);
 			
 		}
@@ -214,22 +207,22 @@ public class SonarqubeSourceTask extends SourceTask {
 
 		log.info("connect-sonarqube: start");
 		
-		sonarURL 				= props.get( SonarqubeSourceConfig.SONAR_URL_CONFIG );
-		sonarUser 				= props.get( SonarqubeSourceConfig.SONAR_USER_CONFIG );
-		sonarPass 				= props.get( SonarqubeSourceConfig.SONAR_PASS_CONFIG );
+		sonarURL 				= props.get( SonarCloudSourceConfig.SONAR_URL_CONFIG );
+		sonarUser 				= props.get( SonarCloudSourceConfig.SONAR_USER_CONFIG );
+		sonarPass 				= props.get( SonarCloudSourceConfig.SONAR_PASS_CONFIG );
 		
-		sonarBaseComponentKey 	= props.get( SonarqubeSourceConfig.SONAR_BCK_CONFIG );
-		sonarMeasureTopic 		= props.get( SonarqubeSourceConfig.SONAR_MEASURE_TOPIC_CONFIG );
-		sonarMetrics 			= props.get( SonarqubeSourceConfig.SONAR_METRIKKEYS_CONFIG );
+		sonarBaseComponentKey 	= props.get( SonarCloudSourceConfig.SONAR_BCK_CONFIG );
+		sonarMeasureTopic 		= props.get( SonarCloudSourceConfig.SONAR_MEASURE_TOPIC_CONFIG );
+		sonarMetrics 			= props.get( SonarCloudSourceConfig.SONAR_METRIKKEYS_CONFIG );
 		
-		sonarProjectKeys 	= props.get( SonarqubeSourceConfig.SONAR_PROJECT_KEYS_CONFIG );
-		sonarIssueTopic			= props.get( SonarqubeSourceConfig.SONAR_ISSUE_TOPIC_CONFIG);
+		sonarProjectKeys 	= props.get( SonarCloudSourceConfig.SONAR_PROJECT_KEYS_CONFIG );
+		sonarIssueTopic			= props.get( SonarCloudSourceConfig.SONAR_ISSUE_TOPIC_CONFIG);
 		
-		sonarInterval = props.get( SonarqubeSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG );
+		sonarInterval = props.get( SonarCloudSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG );
 		
-		String manualSnapshotDate  = props.get( SonarqubeSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		String manualSnapshotDate  = props.get( SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
 		log.info(props.toString());
-		log.info(SonarqubeSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		log.info(SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
 		log.info(manualSnapshotDate);
 
 		
