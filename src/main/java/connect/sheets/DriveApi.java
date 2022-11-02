@@ -61,14 +61,11 @@ public class DriveApi {
 			throws IOException, AuthorizationCredentialsException {
 		// Build a new authorized API client service.
 		Drive service = getDriveService();
-/*
 		Permission permission = new Permission();
 		permission.setRole("reader");
 		permission.setType("anyone");
 		permission.setAllowFileDiscovery(true);
 				service.permissions().create(realFileId, permission);
-*/
-
 		final List<String> ids = new ArrayList<>();
 
 		JsonBatchCallback<Permission> callback = new JsonBatchCallback<Permission>() {

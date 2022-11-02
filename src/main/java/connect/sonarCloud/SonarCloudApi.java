@@ -9,7 +9,7 @@ import rest.RESTInvoker;
 
 /**
  * REST calls for Sonarqube data collection
- * @author wickenkamp
+ * @author Max Tiessler
  *
  */
 public class SonarCloudApi {
@@ -17,7 +17,16 @@ public class SonarCloudApi {
 	
 	public static SonarCloudMeasuresResult getMeasures(String sonarURL, String username, String password, String metricKeys, String sonarBaseComponentKey, int pageIndex) {
 		
-		RESTInvoker ri = new RESTInvoker(sonarURL + "/api/measures/component_tree?" + "metricKeys=" + metricKeys + "&baseComponentKey=" + sonarBaseComponentKey + "&pageIndex=" + pageIndex , username, password);
+		RESTInvoker ri = new RESTInvoker(sonarURL
+				+ "/api/measures/component_tree?"
+				+ "metricKeys="
+				+ metricKeys
+				+ "&baseComponentKey="
+				+ sonarBaseComponentKey
+				+ "&pageIndex="
+				+ pageIndex,
+				username,
+				password);
 		
 		Gson  gson = new Gson();
 
