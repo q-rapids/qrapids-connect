@@ -23,9 +23,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Kafka Connector Task for Sonarqube
- * @author Axel Wickenkamp
- *
+ * Kafka Connector Task for SonarCloud
+ * @author Max Tiessler
  */
 public class SonarCloudSourceTask extends SourceTask {
 
@@ -38,19 +37,22 @@ public class SonarCloudSourceTask extends SourceTask {
 	private static DateFormat ymd = new SimpleDateFormat("yyyy-MM-dd");
 
 	private String version = "0.0.1";
-	
 
-	private String sonarURL;
-	private String sonarUser;
-	private String sonarPass;
-	private String sonarBaseComponentKey;
+
+	private String cloudToken;
+	private String cloudOrganizationName;
+	private String cloudOrganizationKey;
+	private String cloudProjectKeys;
+	private String cloudMetricKeys;
+
 	private String sonarMeasureTopic;
-	private String sonarMetrics;
-	private String sonarProjectKeys;
 	private String sonarIssueTopic;
 	private String sonarInterval;
-	private Integer interval;
+	private String sonarSnapshotDate;
+
 	private Date snapshotDate;
+
+	private Integer interval;
 
 	
 	// millis of last poll
@@ -60,12 +62,53 @@ public class SonarCloudSourceTask extends SourceTask {
 	private Logger log = Logger.getLogger(SonarCloudSourceTask.class.getName());
 
 	@Override
+	public void start(Map<String, String> props) {
+
+		log.info("connect-sonarqube: start");
+		cloudToken = props.get(SonarCloudSourceConfig.CLOUD_TOKEN_CONFIG);
+		cloudOrganizationName = props.get(SonarCloudSourceConfig.CLOUD_ORGANIZATION_NAME_CONFIG);
+		cloudOrganizationKey = props.get(SonarCloudSourceConfig.CLOUD_ORGANIZATION_KEY_CONFIG);
+		cloudProjectKeys = props.get(SonarCloudSourceConfig.CLOUD_PROJECT_KEYS_CONFIG);
+		cloudMetricKeys = props.get(SonarCloudSourceConfig.CLOUD_METRIC_KEYS_CONFIG);
+		sonarMeasureTopic = props.get(SonarCloudSourceConfig.CLOUD_MEASURE_TOPIC_CONFIG);
+		sonarIssueTopic = props.get(SonarCloudSourceConfig.CLOUD_ISSUE_TOPIC_CONFIG);
+		sonarInterval = props.get(SonarCloudSourceConfig.CLOUD_INTERVAL_SECONDS_CONFIG);
+		sonarSnapshotDate = props.get(SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		String manualSnapshotDate  = props.get( SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		log.info(props.toString());
+		log.info(SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		log.info(manualSnapshotDate);
+
+
+		if (manualSnapshotDate==null || manualSnapshotDate.isEmpty()) {
+			snapshotDate = new Date();
+			log.info("Using today as snapshotDate.");
+		} else {
+			log.info("Using manual snapshotDate: " + manualSnapshotDate);
+			try {
+				snapshotDate = ymd.parse(manualSnapshotDate);
+			} catch (ParseException e) {
+				log.warning("Config value for snapshotDate could not be parsed.");
+				snapshotDate = new Date();
+			}
+		}
+
+
+		if (cloudProjectKeys==null) {
+			throw new ConnectException("No base Component and no componentRoot specified, exiting.");
+		}
+		if ((sonarInterval == null || sonarInterval.isEmpty())) {
+			interval = 3600;
+		} else {
+			interval = Integer.parseInt(sonarInterval);
+		}
+
+	}
+	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
 
 		List<SourceRecord> records = new ArrayList<>(); 
-		
-		// log.info("lastPollDelta:" + (System.currentTimeMillis() - lastPoll) + " interval:" + interval );
-		
+
 		if (lastPoll != 0) {
 			if (System.currentTimeMillis() < (lastPoll + (interval * 1000))) {
 				log.info("----------------------------------------------------------- exit polling, " + ( System.currentTimeMillis() - lastPoll ) / 1000 + " secs since last poll.");
@@ -80,25 +123,21 @@ public class SonarCloudSourceTask extends SourceTask {
 		
 		int page = 0;
 		
-		if (sonarProjectKeys!= null && !sonarProjectKeys.isEmpty()) {
+		if (cloudProjectKeys!= null && !cloudProjectKeys.isEmpty()) {
 			SonarCloudIssuesResult iResult;
 			do {
 				page++;
-				iResult = SonarCloudApi.getIssues(sonarURL, sonarUser, sonarPass, sonarProjectKeys, page);
+				iResult = SonarCloudApi.getIssues(cloudToken, cloudProjectKeys, page);
 				records.addAll( getSonarIssueRecords(iResult, snapshotDateString) );
 			} while ( page*iResult.paging.pageSize < iResult.paging.total );
-			
-		}
-		
-		if (sonarBaseComponentKey != null && !sonarBaseComponentKey.isEmpty()) {
+
 			page = 0;
 			SonarCloudMeasuresResult smr;
 			do {
 				page++;
-				smr = SonarCloudApi.getMeasures(sonarURL, sonarUser, sonarPass, sonarMetrics, sonarBaseComponentKey, page);
+				smr = SonarCloudApi.getMeasures(cloudToken, cloudProjectKeys, cloudMetricKeys, page);
 				records.addAll(getSonarMeasureRecords(smr, snapshotDateString));
 			} while ( page * smr.paging.pageSize < smr.paging.total );
-			
 		}
 
 		return records;
@@ -114,7 +153,6 @@ public class SonarCloudSourceTask extends SourceTask {
 			for ( Measure m : c.measures ) {
 			
 				Struct struct = new Struct( SonarCloudSchema.sonarmeasure );
-				struct.put(SonarCloudSchema.FIELD_SONAR_URL, sonarURL);
 				struct.put(SonarCloudSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
@@ -143,7 +181,6 @@ public class SonarCloudSourceTask extends SourceTask {
 				Map<String,String> hm = new HashMap<String, String>();
 				hm.put("2", "2");
 				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarCloudSchema.sonarmeasure , struct);
-
 				result.add(sr);
 			}
 			
@@ -160,7 +197,6 @@ public class SonarCloudSourceTask extends SourceTask {
 		List<SourceRecord> result = new ArrayList<>();
 		for (Issue i : iResult.issues) {
 			Struct struct = new Struct( SonarCloudSchema.sonarissue );
-			struct.put(SonarCloudSchema.FIELD_SONAR_URL, sonarURL);
 			struct.put(SonarCloudSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 			
 			struct.put(SonarCloudSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
@@ -195,53 +231,7 @@ public class SonarCloudSourceTask extends SourceTask {
 	
 	
 	
-	@Override
-	public void start(Map<String, String> props) {
 
-		log.info("connect-sonarqube: start");
-		sonarURL 				= props.get(SonarCloudSourceConfig.SONAR_URL_CONFIG);
-		sonarUser 				= props.get(SonarCloudSourceConfig.SONAR_USER_CONFIG);
-		sonarPass 				= props.get(SonarCloudSourceConfig.SONAR_PASS_CONFIG);
-		
-		sonarBaseComponentKey 	= props.get(SonarCloudSourceConfig.SONAR_BCK_CONFIG);
-		sonarMeasureTopic 		= props.get(SonarCloudSourceConfig.SONAR_MEASURE_TOPIC_CONFIG);
-		sonarMetrics 			= props.get(SonarCloudSourceConfig.SONAR_METRIKKEYS_CONFIG);
-		
-		sonarProjectKeys 	= props.get(SonarCloudSourceConfig.SONAR_PROJECT_KEYS_CONFIG);
-		sonarIssueTopic			= props.get(SonarCloudSourceConfig.SONAR_ISSUE_TOPIC_CONFIG);
-		
-		sonarInterval = props.get(SonarCloudSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG);
-		
-		String manualSnapshotDate  = props.get( SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
-		log.info(props.toString());
-		log.info(SonarCloudSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
-		log.info(manualSnapshotDate);
-
-		
-		if (manualSnapshotDate==null || manualSnapshotDate.isEmpty()) {
-			snapshotDate = new Date();
-			log.info("Using today as snapshotDate.");
-		} else {
-			log.info("Using manual snapshotDate: " + manualSnapshotDate);
-			try {
-				snapshotDate = ymd.parse(manualSnapshotDate);
-			} catch (ParseException e) {
-				log.warning("Config value for snapshotDate could not be parsed.");
-				snapshotDate = new Date();
-			}
-		}
-			
-		
-		if (sonarProjectKeys==null && sonarBaseComponentKey==null) {
-			throw new ConnectException("No base Component and no componentRoot specified, exiting.");
-		}
-		if ((sonarInterval == null || sonarInterval.isEmpty())) {
-			interval = 3600;
-		} else {
-			interval = Integer.parseInt(sonarInterval);
-		}
-
-	}
 
 	@Override
 	public void stop() {

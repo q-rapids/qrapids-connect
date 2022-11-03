@@ -15,27 +15,29 @@ import rest.RESTInvoker;
 public class SonarCloudApi {
 	
 	
-	public static SonarCloudMeasuresResult getMeasures(String sonarURL, String username, String password, String metricKeys, String sonarBaseComponentKey, int pageIndex) {
+	public static SonarCloudMeasuresResult getMeasures(String cloudToken, String cloudProjectKey, String metricKeys, int pageIndex) {
 		
-		RESTInvoker ri = new RESTInvoker(sonarURL
+		RESTInvoker ri = new RESTInvoker("https://"
+				+ cloudToken + "@sonarcloud.io"
 				+ "/api/measures/component_tree?"
-				+ "metricKeys="
-				+ metricKeys
-				+ "&baseComponentKey="
-				+ sonarBaseComponentKey
-				+ "&pageIndex="
+				+ "component=" + cloudProjectKey
+				+ "&metricKeys=" + metricKeys
+				+ "&p="
 				+ pageIndex,
-				username,
-				password);
+				null);
 		
 		Gson  gson = new Gson();
 
 		return gson.fromJson(ri.getDataFromServer(""), SonarCloudMeasuresResult.class);
 	}
 	
-	public static SonarCloudIssuesResult getIssues(String sonarUrl, String username, String password, String projectKeys, int p) {
+	public static SonarCloudIssuesResult getIssues(String cloudToken, String cloudProjectKeys, int p) {
 		
-		RESTInvoker ri = new RESTInvoker(sonarUrl + "/api/issues/search?projectKeys=" + projectKeys + "&p=" + p, username, password);
+		RESTInvoker ri = new RESTInvoker("https://"
+				+ cloudToken + "@sonarcloud.io"
+				+ "/api/issues/search?projectKeys=" + cloudProjectKeys
+				+ "&p=" + p
+				+ "&types=CODE_SMELL,BUG,VULNERABILITY", null);
 		
 		Gson  gson = new Gson();
 
