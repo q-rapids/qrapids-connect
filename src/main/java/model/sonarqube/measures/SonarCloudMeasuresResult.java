@@ -10,7 +10,7 @@ import model.sonarqube.Paging;
 
 /**
  * SonarcubeMeasuresResult API result
- * @author Axel Wickenkamp
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class SonarCloudMeasuresResult {

@@ -8,7 +8,7 @@ import model.sonarqube.measures.SonarCloudMeasuresResult;
 import rest.RESTInvoker;
 
 /**
- * REST calls for Sonarqube data collection
+ * REST calls for SonarCloud data collection
  * @author Max Tiessler
  *
  */

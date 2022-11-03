@@ -7,7 +7,7 @@ package model.sonarqube.issues;
 
 /**
  * TextRange API result
- * @author Axel Wickenkamp
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class TextRange {

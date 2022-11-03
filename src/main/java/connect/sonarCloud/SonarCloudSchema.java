@@ -10,8 +10,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 
 /**
  * Schema SonarCloud Measures & Issues
- * @author wickenkamp
- *
+ * @author Max Tiessler
  */
 public class SonarCloudSchema {
 	
@@ -100,6 +99,4 @@ public class SonarCloudSchema {
 			.field(FIELD_SONAR_ISSUE_AUTHOR , Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_CREATIONDATE , Schema.OPTIONAL_STRING_SCHEMA)
 			.build();
-			
-
 }

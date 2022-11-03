@@ -93,7 +93,6 @@ public class SonarCloudSourceTask extends SourceTask {
 			}
 		}
 
-
 		if (cloudProjectKeys==null) {
 			throw new ConnectException("No base Component and no componentRoot specified, exiting.");
 		}
@@ -139,7 +138,6 @@ public class SonarCloudSourceTask extends SourceTask {
 				records.addAll(getSonarMeasureRecords(smr, snapshotDateString));
 			} while ( page * smr.paging.pageSize < smr.paging.total );
 		}
-
 		return records;
 
 	}
@@ -147,18 +145,15 @@ public class SonarCloudSourceTask extends SourceTask {
 	private List<SourceRecord>  getSonarMeasureRecords(SonarCloudMeasuresResult mResult, String snapshotDateString) {
 		
 		List<SourceRecord> result = new ArrayList<>();
-		
-		for ( Component c : mResult.components ) {
-		
-			for ( Measure m : c.measures ) {
-			
+		for (Component c : mResult.components) {
+			for (Measure m : c.measures) {
 				Struct struct = new Struct( SonarCloudSchema.sonarmeasure );
 				struct.put(SonarCloudSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
-	
+
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
@@ -170,7 +165,7 @@ public class SonarCloudSourceTask extends SourceTask {
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
 				struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
 				
-				if ( m.value != null ) {
+				if (m.value != null) {
 					try {
 						float intvalue = Float.parseFloat(m.value);
 						struct.put(SonarCloudSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
@@ -185,9 +180,7 @@ public class SonarCloudSourceTask extends SourceTask {
 			}
 			
 		}
-		
 		log.info("Found " + result.size() + " metrics.");
-		
 		return result;
 	}
 
@@ -223,7 +216,6 @@ public class SonarCloudSourceTask extends SourceTask {
 			
 			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarCloudSchema.sonarissue , struct);
 			result.add(sr);
-			
 		}
 		log.info("Found " + result.size() + " issues.");
 		return result;

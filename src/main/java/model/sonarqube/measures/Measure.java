@@ -8,7 +8,7 @@ package model.sonarqube.measures;
 
 /**
  * Sonarqube Measure API result
- * @author Axel Wickenkamp
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class Measure {

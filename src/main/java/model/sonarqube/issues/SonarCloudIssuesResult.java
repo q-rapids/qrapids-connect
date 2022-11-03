@@ -8,8 +8,8 @@ package model.sonarqube.issues;
 import model.sonarqube.Paging;
 
 /**
- * SonarcubeIssuesResult API result
- * @author Axel Wickenkamp
+ * SonarCloud Issues API result
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class SonarCloudIssuesResult {
