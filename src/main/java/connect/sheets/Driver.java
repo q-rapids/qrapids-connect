@@ -22,7 +22,6 @@ public class Driver {
         while (true) {
             List<SourceRecord> records = sheetsSourceTask.poll();
             for (SourceRecord sr : records) {
-                System.out.println(sr);
                 String sourceRecordResult = sr.toString();
                 driverLogger.log(Level.INFO, "Result: {}", sourceRecordResult);
             }
