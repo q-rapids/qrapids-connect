@@ -8,7 +8,7 @@ package model.sonarqube;
 
 /**
  * Paging API result
- * @author Axel Wickenkamp
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class Paging {
