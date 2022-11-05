@@ -15,6 +15,10 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
+/**
+ * Kafka Connect SourceTask class for Google Sheets
+ * @author Max Tiessler
+ */
 public class SheetsSourceTask extends SourceTask {
 
     private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
@@ -130,11 +134,19 @@ public class SheetsSourceTask extends SourceTask {
         return timeInputation;
     }
 
+    /**
+     * Version getter
+     * @return connector version
+     */
     @Override
     public String version() {
         return "0.1";
     }
 
+    /**
+     * Initializes the task
+     * @param properties    Task properties
+     */
     @Override
     public void start(Map<String, String> properties) {
         taskLogger.info("connect-sheets // TASK: start");
