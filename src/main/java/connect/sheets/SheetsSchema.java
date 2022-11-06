@@ -22,7 +22,7 @@ public class SheetsSchema {
 	public static String FIELD_TIME = "time";
 	public static String FIELD_DEVELOPER_INFO = "developer_info";
 	public static String FIELD_IMPUTATION_TIMES = "imputation_times";
-	public static String FIELD_SHEET_ID = "sheet_id";
+
 	public static String FIELD_SPRINT_NAME ="sprint_name";
 
 	public static String FIELD_DEVELOPER_NAME = "developer_name";
@@ -31,7 +31,6 @@ public class SheetsSchema {
 
 
 	public static Schema imputationSchema = SchemaBuilder.struct().name("imputation")
-			.field(FIELD_SHEET_ID, Schema.STRING_SCHEMA)
 			.field(FIELD_SPRINT_NAME, Schema.STRING_SCHEMA)
 			.field(FIELD_DEVELOPER_TIME, Schema.STRING_SCHEMA)
 			.build();
