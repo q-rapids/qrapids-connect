@@ -1,6 +1,7 @@
 package connect.sheets;
 
 
+import com.google.api.services.sheets.v4.model.ValueRange;
 import model.sheets.Developer;
 import model.sheets.TeamInformation;
 import model.sheets.TimeInputation;
@@ -99,16 +100,53 @@ public class SheetsSourceTask extends SourceTask {
         return teamInformation;
     }
 
+    private String getDeveloperName(final Object memberValue) {
+        String auxMemberValue = memberValue.toString();
+        auxMemberValue = auxMemberValue
+                .substring(1, auxMemberValue.length() - 1);
+        return auxMemberValue.split(",")[0];
+    }
+
+    private Integer getDeveloperHours(final Object memberValue) {
+        String auxMemberValue = memberValue.toString();
+        auxMemberValue = auxMemberValue
+                .substring(1, auxMemberValue.length() - 1);
+        auxMemberValue = auxMemberValue.split(",")[1];
+        auxMemberValue = String.valueOf(auxMemberValue.charAt(1));
+        return Integer.parseInt(auxMemberValue);
+    }
     private SourceRecord generateTeamRecords(final String name, final Integer teamNumber) throws AuthorizationCredentialsException, IOException {
         TeamInformation teamInformation = getTeamInformation(name);
-        ArrayList<Developer> developersInformation = new ArrayList<>();
-        for(int developerPosition = 0;
-            developerPosition < Integer.parseInt(numberDevelopersPerTeam[teamNumber]); ++developerPosition) {
-            String developerName = SheetsApi.getDeveloperName(developerPosition, actualSpreadSheet);
-            Developer developerInformation = getDeveloperInformation(developerPosition, developerName);
-            developersInformation.add(developerInformation);
+        int numberMembers = Integer.parseInt(numberDevelopersPerTeam[teamNumber]);
+        List<ValueRange> teamValues = SheetsApi.getTeamValues(sprints, numberMembers, actualSpreadSheet);
+        Map<String, ArrayList<Integer>> memberHours = new HashMap<>();
+        for (ValueRange sprintValues : teamValues) {
+            for (Object memberValue : sprintValues.getValues()) {
+                String developerName = getDeveloperName(memberValue);
+                Integer developerHours = getDeveloperHours(memberValue);
+                if (memberHours.get(developerName) == null) {
+                    memberHours.put(developerName, new ArrayList<>(developerHours));
+                } else {
+                    memberHours.get(developerName).add(developerHours);
+                }
+            }
         }
-        teamInformation.developerInfo = developersInformation.toArray(Developer[]::new);
+        ArrayList<Developer> teamDevelopers = new ArrayList<>();
+        for (String devName : memberHours.keySet()) {
+            Developer dev = new Developer();
+            dev.developerName = devName;
+            ArrayList<TimeInputation> developerTimeInputations = new ArrayList<>();
+            for (int i = 0; i < memberHours.get(devName).size(); ++i) {
+                TimeInputation developerSprintTimeInputation = new TimeInputation();
+                developerSprintTimeInputation.sprintName = sprints[i];
+                developerSprintTimeInputation.sprintHours = (double) memberHours.get(devName).get(i);
+                developerSprintTimeInputation.sheetId = "0";
+                developerTimeInputations.add(developerSprintTimeInputation);
+            }
+            dev.timeInputations = developerTimeInputations.toArray(TimeInputation[]::new);
+            teamDevelopers.add(dev);
+        }
+        teamInformation.developerInfo = teamDevelopers.toArray(Developer[]::new);
         return getSheetSourceRecord(teamInformation);
     }
 
@@ -194,7 +232,6 @@ public class SheetsSourceTask extends SourceTask {
             throw new RuntimeException(e);
         }
         taskLogger.info("connect-sheets // TASK: Finished task");
-
         return records;
 
     }
