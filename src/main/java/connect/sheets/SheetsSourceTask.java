@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -76,8 +77,7 @@ public class SheetsSourceTask extends SourceTask {
         if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) {
             pollInterval = 3600;
         } else{
-            //pollInterval = Integer.parseInt(pollIntervalConfiguration);
-            pollInterval = 60*60;
+            pollInterval = Integer.parseInt(pollIntervalConfiguration);
         }
     }
 
@@ -182,8 +182,9 @@ public class SheetsSourceTask extends SourceTask {
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
         List <SourceRecord> records = new ArrayList<>();
-        taskLogger.info("lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
-                + " interval:" + pollIntervalConfiguration);
+        String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
+                + " interval:" + pollIntervalConfiguration;
+        taskLogger.log(Level.INFO, "Task Poll {}", messageTaskPollInfo);
         if(lastPollTime != 0 && lostConnection()) {
             Thread.sleep(1000);
             return records;
