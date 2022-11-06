@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -185,13 +186,17 @@ public class SheetsSourceTask extends SourceTask {
                 String team = teamNames[i];
                 Integer teamNumber = i;
                 actualSpreadSheet = spreadSheetIds[i];
-                records.add(generateTeamRecords(team, teamNumber));
+                SourceRecord teamRecord = generateTeamRecords(team, teamNumber);
+                System.out.println(teamRecord);
+                records.add(teamRecord);
             }
         } catch (AuthorizationCredentialsException | IOException e) {
             throw new RuntimeException(e);
         }
         taskLogger.info("connect-sheets // TASK: Finished task");
+
         return records;
+
     }
 
 

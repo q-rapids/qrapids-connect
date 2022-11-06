@@ -20,12 +20,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 
 public class SheetsApi {
 
 	private static Sheets sheetsService;
+
+	private static int requestsDone = 0;
 
 	/**
 	 * Creates a new google sheet spreadsheet
@@ -84,10 +85,10 @@ public class SheetsApi {
 	}
 
 	/**
-	 *
-	 * @param authorizationCredentials
-	 * @return
-	 * @throws AuthorizationCredentialsException
+	 * Generates a Json from the Authorization Credentials
+	 * @param authorizationCredentials	Google Authorization Credentials
+	 * @return	Json containing the authorization credentials
+	 * @throws AuthorizationCredentialsException	If no authorization credentials are given
 	 */
 	private static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
 		if(authorizationCredentials != null) {
@@ -156,12 +157,14 @@ public class SheetsApi {
 									   final String spreadSheetId) throws AuthorizationCredentialsException, IOException {
 		Sheets service = getSheetsService();
 		ValueRange result;
-		Double hours = 0.0;
-		Integer position = developerPosition + 10;
+		double hours = 0.0;
+		int position = developerPosition + 10;
 		try {
 			// Gets the values of the cells in the specified range.
 			String range = sprint+"!"+"J"+Integer.toString(position);
 			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			requestsDone++;
+			System.out.println("RequestsDone: " + Integer.toString(requestsDone));
 			int numRows = result.getValues() != null ? result.getValues().size() : 0;
 			if (numRows != 0) {
 				String hoursString = result.getValues().get(0).toString();
@@ -190,6 +193,8 @@ public class SheetsApi {
 			// Gets the values of the cells in the specified range.
 			String range = "I"+Integer.toString(position);
 			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			requestsDone++;
+			System.out.println("RequestsDone: " + Integer.toString(requestsDone));
 			int numRows = result.getValues() != null ? result.getValues().size() : 0;
 			if (numRows != 0) {
 				String developerName = result.getValues().get(0).toString();
