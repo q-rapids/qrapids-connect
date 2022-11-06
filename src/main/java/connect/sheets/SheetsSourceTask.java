@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -36,13 +35,11 @@ public class SheetsSourceTask extends SourceTask {
 
     private Date lastDataRetreived;
 
-    private String[] spreadSheetIds;
+    private String spreadSheetId;
 
-    private String actualSpreadSheet;
+    private String numberTeamMembers;
 
-    private String[] numberDevelopersPerTeam;
-
-    private String[] teamNames;
+    private String teamName;
 
     private String[] sprints;
     private String timeTopic;
@@ -67,14 +64,11 @@ public class SheetsSourceTask extends SourceTask {
     private void initializeConfigurations(final Map<String, String> properties) {
         timeTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
         pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
-        String spreadSheetIdsAux = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
-        spreadSheetIds = spreadSheetIdsAux.split(",");
+        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
         String sprintsConfig = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
         sprints = sprintsConfig.split(",");
-        String memberNumber = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
-        numberDevelopersPerTeam = memberNumber.split(",");
-        String teamNamesAux = properties.get(SheetsSourceConfig.SHEET_TEAM_NAMES);
-        teamNames = teamNamesAux.split(",");
+        numberTeamMembers = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
+        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
 
     }
     private void setPollConfiguration() {
@@ -95,7 +89,7 @@ public class SheetsSourceTask extends SourceTask {
         TeamInformation teamInformation = new TeamInformation();
         teamInformation.id = UUID.randomUUID();
         teamInformation.teamName = name;
-        teamInformation.spreadsheetId = actualSpreadSheet;
+        teamInformation.spreadsheetId = spreadSheetId;
         teamInformation.time = String.valueOf(System.currentTimeMillis());
         return teamInformation;
     }
@@ -115,10 +109,10 @@ public class SheetsSourceTask extends SourceTask {
         auxMemberValue = String.valueOf(auxMemberValue.charAt(1));
         return Integer.parseInt(auxMemberValue);
     }
-    private SourceRecord generateTeamRecords(final String name, final Integer teamNumber) throws AuthorizationCredentialsException, IOException {
+    private SourceRecord generateTeamRecords(final String name) throws AuthorizationCredentialsException, IOException {
         TeamInformation teamInformation = getTeamInformation(name);
-        int numberMembers = Integer.parseInt(numberDevelopersPerTeam[teamNumber]);
-        List<ValueRange> teamValues = SheetsApi.getTeamValues(sprints, numberMembers, actualSpreadSheet);
+        int numberMembers = Integer.parseInt(numberTeamMembers);
+        List<ValueRange> teamValues = SheetsApi.getTeamValues(sprints, numberMembers, spreadSheetId);
         Map<String, ArrayList<Integer>> memberHours = new HashMap<>();
         for (ValueRange sprintValues : teamValues) {
             for (Object memberValue : sprintValues.getValues()) {
@@ -140,7 +134,6 @@ public class SheetsSourceTask extends SourceTask {
                 TimeInputation developerSprintTimeInputation = new TimeInputation();
                 developerSprintTimeInputation.sprintName = sprints[i];
                 developerSprintTimeInputation.sprintHours = (double) memberHours.get(devName).get(i);
-                developerSprintTimeInputation.sheetId = "0";
                 developerTimeInputations.add(developerSprintTimeInputation);
             }
             dev.timeInputations = developerTimeInputations.toArray(TimeInputation[]::new);
@@ -150,36 +143,13 @@ public class SheetsSourceTask extends SourceTask {
         return getSheetSourceRecord(teamInformation);
     }
 
-    private Developer getDeveloperInformation(final Integer developerPosition,
-                                              final String name)
-                                              throws AuthorizationCredentialsException, IOException {
-        Developer developer = new Developer();
-        developer.developerName = name;
-        ArrayList<TimeInputation> developerTimeImputations = new ArrayList<>();
-        for (String sprint : sprints) {
-            TimeInputation developerTimeImputation = getDeveloperTimeImputation(developerPosition, sprint);
-            developerTimeImputations.add(developerTimeImputation);
-        }
-        developer.timeInputations = developerTimeImputations.toArray(TimeInputation[]::new);
-        return developer;
-    }
-
-    private TimeInputation getDeveloperTimeImputation(final Integer developerPosition,
-                                                      final String sprintName) throws AuthorizationCredentialsException, IOException {
-        TimeInputation timeInputation = new TimeInputation();
-        timeInputation.sheetId = SheetsApi.getSheetId(sprintName, actualSpreadSheet);
-        timeInputation.sprintName = sprintName;
-        timeInputation.sprintHours = SheetsApi.getHoursDone(developerPosition, sprintName, actualSpreadSheet);
-        return timeInputation;
-    }
-
     /**
      * Version getter
      * @return connector version
      */
     @Override
     public String version() {
-        return "0.1";
+        return "0.5";
     }
 
     /**
@@ -220,14 +190,10 @@ public class SheetsSourceTask extends SourceTask {
         }
         lastPollTime = System.currentTimeMillis();
         try {
-            for (int i = 0; i < teamNames.length; ++i) {
-                String team = teamNames[i];
-                Integer teamNumber = i;
-                actualSpreadSheet = spreadSheetIds[i];
-                SourceRecord teamRecord = generateTeamRecords(team, teamNumber);
-                System.out.println(teamRecord);
-                records.add(teamRecord);
-            }
+            SourceRecord teamRecord = generateTeamRecords(teamName);
+            System.out.println(teamRecord);
+            records.add(teamRecord);
+
         } catch (AuthorizationCredentialsException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -247,7 +213,7 @@ public class SheetsSourceTask extends SourceTask {
         Struct teamData = new Struct(SheetsSchema.sheetSchema);
         teamData.put(SheetsSchema.FIELD_ID, teamInformation.id.toString());
         teamData.put(SheetsSchema.FIELD_TEAM_NAME, teamInformation.teamName);
-        teamData.put(SheetsSchema.FIELD_SPREADSHEET_ID, actualSpreadSheet);
+        teamData.put(SheetsSchema.FIELD_SPREADSHEET_ID, spreadSheetId);
         teamData.put(SheetsSchema.FIELD_TIME, teamInformation.time);
         Vector<Struct> developers = new Vector<>();
         for (Developer developerInfo : teamInformation.developerInfo) {
@@ -256,7 +222,6 @@ public class SheetsSourceTask extends SourceTask {
             Vector<Struct> developerImputations = new Vector<>();
             for (TimeInputation timeInputation : developerInfo.timeInputations) {
                 Struct imputation = new Struct(SheetsSchema.imputationSchema);
-                imputation.put(SheetsSchema.FIELD_SHEET_ID, timeInputation.sheetId);
                 imputation.put(SheetsSchema.FIELD_SPRINT_NAME, timeInputation.sprintName);
                 imputation.put(SheetsSchema.FIELD_DEVELOPER_TIME, String.valueOf(timeInputation.sprintHours));
                 developerImputations.add(imputation);
