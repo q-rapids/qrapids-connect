@@ -136,10 +136,18 @@ public class SheetsSourceTask extends SourceTask {
                 developerSprintTimeInputation.sprintHours = (double) memberHours.get(devName).get(i);
                 developerTimeInputations.add(developerSprintTimeInputation);
             }
-            dev.timeInputations = developerTimeInputations.toArray(TimeInputation[]::new);
+            TimeInputation[] times = new TimeInputation[developerTimeInputations.size()];
+            for (int i = 0; i < developerTimeInputations.size(); ++i) {
+                times[i] = developerTimeInputations.get(i);
+            }
+            dev.timeInputations = times;
             teamDevelopers.add(dev);
         }
-        teamInformation.developerInfo = teamDevelopers.toArray(Developer[]::new);
+        Developer[] devs = new Developer[teamDevelopers.size()];
+        for (int i = 0; i < teamDevelopers.size(); ++i) {
+            devs[i] = teamDevelopers.get(i);
+        }
+        teamInformation.developerInfo = devs;
         return getSheetSourceRecord(teamInformation);
     }
 
