@@ -88,7 +88,7 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_INTERVAL_SECONDS_CONFIG = "sheet.interval.seconds";
     public static final String SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
     public static final String SHEET_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
-    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 24 * 60 * 60; //24 h
+    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 86400; //24 h
     /*---------------------*/
 
     public static final ConfigDef DEFS = new ConfigDef();
