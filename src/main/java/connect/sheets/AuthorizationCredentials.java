@@ -3,6 +3,11 @@ package connect.sheets;
 
 import com.google.gson.annotations.Expose;
 
+
+/**
+ * Authorization Credentials Singleton Class Container
+ * @author Max Tiessler
+ */
 public final class AuthorizationCredentials {
     private static AuthorizationCredentials instance;
 

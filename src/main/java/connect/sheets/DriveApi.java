@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Google Drive API requester class
+ * @author Max Tiessler
+ */
 public class DriveApi {
 
 	private static Drive driveService;

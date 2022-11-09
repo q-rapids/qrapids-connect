@@ -20,12 +20,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 
 public class SheetsApi {
 
 	private static Sheets sheetsService;
+
+	private static int requestsDone = 0;
 
 	/**
 	 * Creates a new google sheet spreadsheet
@@ -43,7 +44,6 @@ public class SheetsApi {
 				.execute();
 		return spreadsheet.getSpreadsheetId();
 	}
-
 
 	public static void createSheets(final String spreadSheetId, final List<String> sheetTitles) throws IOException, AuthorizationCredentialsException {
 		BatchUpdateSpreadsheetRequest requestBody = new BatchUpdateSpreadsheetRequest();
@@ -74,6 +74,8 @@ public class SheetsApi {
 		Sheets.Spreadsheets.BatchUpdate request = service.spreadsheets().batchUpdate(spreadSheetId, requestBody);
 		BatchUpdateSpreadsheetResponse response = request.execute();
 	}
+
+
 	private static Sheets getSheetsService() throws AuthorizationCredentialsException, IOException {
 		if (sheetsService == null) {
 			String jsonCredentials = getJson(AuthorizationCredentials.getInstance());
@@ -84,10 +86,10 @@ public class SheetsApi {
 	}
 
 	/**
-	 *
-	 * @param authorizationCredentials
-	 * @return
-	 * @throws AuthorizationCredentialsException
+	 * Generates a Json from the Authorization Credentials
+	 * @param authorizationCredentials	Google Authorization Credentials
+	 * @return	Json containing the authorization credentials
+	 * @throws AuthorizationCredentialsException	If no authorization credentials are given
 	 */
 	private static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
 		if(authorizationCredentials != null) {
@@ -129,7 +131,6 @@ public class SheetsApi {
 		Sheets service = getSheetsService();
 		ValueRange result = null;
 		try {
-			// Gets the values of the cells in the specified range.
 			result = service.spreadsheets().values().get(spreadsheetId, range).execute();
 			int numRows = result.getValues() != null ? result.getValues().size() : 0;
 			System.out.printf("%d rows retrieved.", numRows);
@@ -156,12 +157,14 @@ public class SheetsApi {
 									   final String spreadSheetId) throws AuthorizationCredentialsException, IOException {
 		Sheets service = getSheetsService();
 		ValueRange result;
-		Double hours = 0.0;
-		Integer position = developerPosition + 10;
+		double hours = 0.0;
+		int position = developerPosition + 10;
 		try {
 			// Gets the values of the cells in the specified range.
 			String range = sprint+"!"+"J"+Integer.toString(position);
 			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			requestsDone++;
+			System.out.println("RequestsDone: " + Integer.toString(requestsDone));
 			int numRows = result.getValues() != null ? result.getValues().size() : 0;
 			if (numRows != 0) {
 				String hoursString = result.getValues().get(0).toString();
@@ -190,6 +193,8 @@ public class SheetsApi {
 			// Gets the values of the cells in the specified range.
 			String range = "I"+Integer.toString(position);
 			result = service.spreadsheets().values().get(spreadSheetId, range).execute();
+			requestsDone++;
+			System.out.println("RequestsDone: " + Integer.toString(requestsDone));
 			int numRows = result.getValues() != null ? result.getValues().size() : 0;
 			if (numRows != 0) {
 				String developerName = result.getValues().get(0).toString();
@@ -207,6 +212,46 @@ public class SheetsApi {
 		}
 		return "anonymous";
 	}
+
+	private static List<String> generateRanges(final String[] sprintNames,
+										 final Integer numberMembers) {
+		ArrayList<String> rangeSet = new ArrayList<>();
+		for (String sprint : sprintNames) {
+			StringBuilder range = new StringBuilder();
+			range.append(sprint)
+					.append("!")
+					.append("I10:")
+					.append("J")
+					.append(10 + (numberMembers - 1));
+			rangeSet.add(range.toString());
+		}
+		return rangeSet;
+	}
+	public static List<ValueRange> getTeamValues(final String[] sprintNames,
+													   final Integer numberMembers,
+													   final String spreadsheetId)
+			throws IOException, AuthorizationCredentialsException {
+		Sheets service = getSheetsService();
+		BatchGetValuesResponse result = null;
+		List <String> ranges = generateRanges(sprintNames, numberMembers);
+		try {
+			// Gets the values of the cells in the specified range.
+			result = service.spreadsheets().values().batchGet(spreadsheetId)
+					.setRanges(ranges).execute();
+			System.out.printf("%d ranges retrieved.", result.getValueRanges().size());
+		} catch (GoogleJsonResponseException e) {
+			GoogleJsonError error = e.getDetails();
+			if (error.getCode() == 404) {
+				System.out.printf("Spreadsheet not found with id '%s'.\n", spreadsheetId);
+			} else {
+				throw e;
+			}
+		}
+		List<ValueRange> resultValueRanges = result.getValueRanges();
+		return resultValueRanges;
+	}
 }
+
+
 
 

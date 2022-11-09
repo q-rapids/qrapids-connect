@@ -62,17 +62,17 @@ public class SheetsSourceConfig extends AbstractConfig {
     /*---------------------*/
 
     /*----Subject Information----*/
-    public static final String SPREADSHEET_IDS = "spreadsheet.ids";
-    public static final String SPREADSHEET_IDS_CONFIG_DISPLAY = "Spreadsheet IDs";
-    public static final String SPREADSHEET_IDS_CONFIG_DOC = "Spreadsheet IDs to use when connecting to Google Sheets API.";
+    public static final String SPREADSHEET_ID = "spreadsheet.id";
+    public static final String SPREADSHEET_IDS_CONFIG_DISPLAY = "Spreadsheet ID";
+    public static final String SPREADSHEET_IDS_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
 
     public static final String SHEET_SPRINT_NAMES = "sprint.names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DISPLAY = "Sprint names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DOC = "Sprint names of the project to use when connecting to Google Sheets API";
 
-    public static final String SHEET_TEAM_NAMES = "team.names";
-    public static final String SHEET_TEAM_NAMES_CONFIG_DISPLAY = "Team names";
-    public static final String SHEET_TEAM_NAMES_CONFIG_DOC = "Team names of the project";
+    public static final String SHEET_TEAM_NAME = "team.name";
+    public static final String SHEET_TEAM_NAMES_CONFIG_DISPLAY = "Team name";
+    public static final String SHEET_TEAM_NAMES_CONFIG_DOC = "Team name of the project";
 
     public static final String SHEET_TEAM_NUMBER_MEMBERS = "team.number.members";
     public static final String SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DISPLAY = "Number of members";
@@ -88,14 +88,14 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEET_INTERVAL_SECONDS_CONFIG = "sheet.interval.seconds";
     public static final String SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
     public static final String SHEET_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
-    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 24 * 60 * 60; //24 h
+    public static final Integer SHEET_INTERVAL_SECONDS_CONFIG_DEFAULT = 86400; //24 h
     /*---------------------*/
 
     public static final ConfigDef DEFS = new ConfigDef();
 
     static {
         DEFS
-                .define(SPREADSHEET_IDS,
+                .define(SPREADSHEET_ID,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
                         SPREADSHEET_IDS_CONFIG_DOC,
@@ -217,7 +217,7 @@ public class SheetsSourceConfig extends AbstractConfig {
                         15,
                         ConfigDef.Width.LONG,
                         SHEET_HOUR_TOPIC_CONFIG_DISPLAY)
-                .define(SHEET_TEAM_NAMES,
+                .define(SHEET_TEAM_NAME,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.LOW,
                         SHEET_TEAM_NAMES_CONFIG_DOC,

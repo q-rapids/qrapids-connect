@@ -15,7 +15,7 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private String pollInterval;
 
-    private String spreadSheetIds;
+    private String spreadSheetId;
 
     private String memberNumber;
 
@@ -23,7 +23,7 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private String sheetHourTopic;
 
-    private String teamNames;
+    private String teamName;
 
     private final Logger connectorLogger = Logger.getLogger(SheetsSourceConnector.class.getName());
 
@@ -35,11 +35,11 @@ public class SheetsSourceConnector extends SourceConnector {
     @Override
     public void start(Map<String, String> properties) {
         pollInterval = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
-        spreadSheetIds = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
+        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
         memberNumber =  properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
         sprintNames =  properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
         sheetHourTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
-        teamNames = properties.get(SheetsSourceConfig.SHEET_TEAM_NAMES);
+        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
         authorizationCredentials = AuthorizationCredentials.getInstance(
                 properties.get(SheetsSourceConfig.SHEET_TYPE),
                 properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
@@ -63,8 +63,8 @@ public class SheetsSourceConnector extends SourceConnector {
         connectorLogger.info("connect-sheets // CONNECTOR: Initialize Spreadsheet");
         memberNumber = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
         sprintNames = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
-        if(SheetsSourceConfig.SPREADSHEET_IDS == null
-                || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_IDS), "")) {
+        if(SheetsSourceConfig.SPREADSHEET_ID == null
+                || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
             throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
             /*
             TODO: automatize (almost done, remains sharing file to users)
@@ -74,7 +74,7 @@ public class SheetsSourceConnector extends SourceConnector {
             */
         } else {
             connectorLogger.info("connect-sheets // CONNECTOR: Spreadsheet exists");
-            spreadSheetIds = properties.get(SheetsSourceConfig.SPREADSHEET_IDS);
+            spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
         }
     }
 
@@ -88,7 +88,7 @@ public class SheetsSourceConnector extends SourceConnector {
     public List<Map<String, String>> taskConfigs(int i) {
         ArrayList<Map<String, String>> configurationList = new ArrayList<>();
         Map<String, String> configuration = new HashMap<>();
-        configuration.put(SheetsSourceConfig.SPREADSHEET_IDS, spreadSheetIds);
+        configuration.put(SheetsSourceConfig.SPREADSHEET_ID, spreadSheetId);
         configuration.put(SheetsSourceConfig.SHEET_SPRINT_NAMES, sprintNames);
         configuration.put(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS, memberNumber);
         configuration.put(SheetsSourceConfig.SHEET_PROJECT_ID, authorizationCredentials.getProject_id());
@@ -102,7 +102,7 @@ public class SheetsSourceConnector extends SourceConnector {
         configuration.put(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL, authorizationCredentials.getClient_x509_cert_url());
         configuration.put(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG, "" + pollInterval);
         configuration.put(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG, sheetHourTopic);
-        configuration.put(SheetsSourceConfig.SHEET_TEAM_NAMES, teamNames);
+        configuration.put(SheetsSourceConfig.SHEET_TEAM_NAME, teamName);
         configurationList.add(configuration);
         return configurationList;
     }
