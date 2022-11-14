@@ -12,7 +12,7 @@ import model.sonarqube.Paging;
  * @author Max Tiessler & Axel Wickenkamp
  *
  */
-public class SonarCloudIssuesResult {
+public class SonarIssuesResult {
 	
 	public int total;
 	public int p;

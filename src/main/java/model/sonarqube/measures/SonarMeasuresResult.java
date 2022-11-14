@@ -13,7 +13,7 @@ import model.sonarqube.Paging;
  * @author Max Tiessler & Axel Wickenkamp
  *
  */
-public class SonarCloudMeasuresResult {
+public class SonarMeasuresResult {
 	
 	public Paging paging;
 	

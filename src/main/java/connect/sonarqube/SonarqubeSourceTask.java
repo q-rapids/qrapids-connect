@@ -24,10 +24,10 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import model.sonarqube.issues.Issue;
-import model.sonarqube.issues.SonarCloudIssuesResult;
+import model.sonarqube.issues.SonarIssuesResult;
 import model.sonarqube.measures.Component;
 import model.sonarqube.measures.Measure;
-import model.sonarqube.measures.SonarCloudMeasuresResult;
+import model.sonarqube.measures.SonarMeasuresResult;
 
 /**
  * Kafka Connector Task for Sonarqube
@@ -89,7 +89,7 @@ public class SonarqubeSourceTask extends SourceTask {
 		
 		if ( sonarProjectKeys!= null && !sonarProjectKeys.isEmpty()) {
 		
-			SonarCloudIssuesResult iResult;
+			SonarIssuesResult iResult;
 			do {
 				page++;
 				iResult = SonarqubeApi.getIssues(sonarURL, sonarUser, sonarPass, sonarProjectKeys, page);
@@ -101,7 +101,7 @@ public class SonarqubeSourceTask extends SourceTask {
 		if ( sonarBaseComponentKey != null && !sonarBaseComponentKey.isEmpty() ) {
 			
 			page = 0;
-			SonarCloudMeasuresResult smr;
+			SonarMeasuresResult smr;
 			do {
 				page++;
 				smr = SonarqubeApi.getMeasures(sonarURL, sonarUser, sonarPass, sonarMetrics, sonarBaseComponentKey, page);
@@ -114,7 +114,7 @@ public class SonarqubeSourceTask extends SourceTask {
 
 	}
 
-	private List<SourceRecord>  getSonarMeasureRecords(SonarCloudMeasuresResult mResult, String snapshotDateString) {
+	private List<SourceRecord>  getSonarMeasureRecords(SonarMeasuresResult mResult, String snapshotDateString) {
 		
 		List<SourceRecord> result = new ArrayList<>();
 		
@@ -165,7 +165,7 @@ public class SonarqubeSourceTask extends SourceTask {
 
 	
 
-	private List<SourceRecord>  getSonarIssueRecords(SonarCloudIssuesResult iResult, String snapshotDateString) {
+	private List<SourceRecord>  getSonarIssueRecords(SonarIssuesResult iResult, String snapshotDateString) {
 		
 		List<SourceRecord> result = new ArrayList<>();
 		

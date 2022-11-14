@@ -3,7 +3,7 @@
  * terms of the Apache License 2.0 license
  */
 
-package connect.sonarCloud;
+package connect.sonar;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -12,9 +12,9 @@ import org.apache.kafka.connect.data.SchemaBuilder;
  * Schema SonarCloud Measures & Issues
  * @author Max Tiessler
  */
-public class SonarCloudSchema {
+public class SonarSchema {
 	
-	// JIRA
+
 	public static String FIELD_SONAR_URL = "sonarUrl";
 	public static String FIELD_SONAR_SNAPSHOT_DATE = "snapshotDate";
 	
@@ -54,7 +54,7 @@ public class SonarCloudSchema {
 	
 
 	/**
-	 * Schema Sonarcube Measures
+	 * Schema Sonar Measures
 	 */
 	public static Schema sonarmeasure = SchemaBuilder.struct().name("sonarmeasure")
 			.field(FIELD_SONAR_URL, Schema.STRING_SCHEMA)
@@ -76,7 +76,7 @@ public class SonarCloudSchema {
 	
 	
 	/**
-	 * Schema Sonarcube Issues
+	 * Schema Sonar Issues
 	 */
 	public static Schema sonarissue = SchemaBuilder.struct().name("sonarissue")
 			.field(FIELD_SONAR_URL, Schema.STRING_SCHEMA)

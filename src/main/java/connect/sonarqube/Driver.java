@@ -22,7 +22,7 @@ public class Driver {
 	
 	public static void main(String[] args) throws InterruptedException {
 		
-		Map<String,String> config = PropertyFile.get("./config/connect-sonarCloud.properties");
+		Map<String,String> config = PropertyFile.get("config/connect-sonar.properties");
 		SonarqubeSourceTask st = new SonarqubeSourceTask();
 		st.start(config);
 		
