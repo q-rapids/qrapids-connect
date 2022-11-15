@@ -195,6 +195,7 @@ public class SonarSourceTask extends SourceTask {
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_MESSAGE, i.message);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_EFFORT, i.effort);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_DEBT, i.debt);
+			struct.put(SonarSchema.FIELD_SONAR_TYPE, i.type);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_AUTHOR, i.author);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_CREATIONDATE, i.creationDate);
 

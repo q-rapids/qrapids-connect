@@ -49,6 +49,8 @@ public class SonarSchema {
 	public static String FIELD_SONAR_ISSUE_EFFORT = "effort";
 	public static String FIELD_SONAR_ISSUE_DEBT = "debt";
 	public static String FIELD_SONAR_ISSUE_AUTHOR = "author";
+
+	public static String FIELD_SONAR_TYPE = "type";
 	public static String FIELD_SONAR_ISSUE_CREATIONDATE = "creationDate";
 	
 
@@ -94,6 +96,7 @@ public class SonarSchema {
 			.field(FIELD_SONAR_ISSUE_EFFORT , Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_DEBT , Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_AUTHOR , Schema.OPTIONAL_STRING_SCHEMA)
+			.field(FIELD_SONAR_TYPE , Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_CREATIONDATE , Schema.OPTIONAL_STRING_SCHEMA)
 			.build();
 }
