@@ -58,7 +58,7 @@ public class SonarSourceTask extends SourceTask {
 	@Override
 	public void start(Map<String, String> props) {
 
-		log.info("connect-sonarqube: start");
+		log.info("connect-sonarcloud: start");
 		sonarToken = props.get(SonarSourceConfig.SONAR_TOKEN_CONFIG);
 		sonarProjectKeys = props.get(SonarSourceConfig.SONAR_PROJECT_KEYS_CONFIG);
 		sonarMetricKeys = props.get(SonarSourceConfig.SONAR_METRIC_KEYS_CONFIG);
@@ -118,7 +118,7 @@ public class SonarSourceTask extends SourceTask {
 				page++;
 				iResult = SonarApi.getIssues(sonarToken, sonarProjectKeys, page);
 				records.addAll( getSonarIssueRecords(iResult, snapshotDateString) );
-			} while ( page*iResult.paging.pageSize < iResult.paging.total );
+			} while (page*iResult.paging.pageSize < iResult.paging.total);
 
 			page = 0;
 			SonarMeasuresResult smr;
@@ -126,10 +126,9 @@ public class SonarSourceTask extends SourceTask {
 				page++;
 				smr = SonarApi.getMeasures(sonarToken, sonarProjectKeys, sonarMetricKeys, page);
 				records.addAll(getSonarMeasureRecords(smr, snapshotDateString));
-			} while ( page * smr.paging.pageSize < smr.paging.total );
+			} while (page * smr.paging.pageSize < smr.paging.total);
 		}
 		return records;
-
 	}
 
 	private List<SourceRecord>  getSonarMeasureRecords(SonarMeasuresResult mResult, String snapshotDateString) {
@@ -137,7 +136,7 @@ public class SonarSourceTask extends SourceTask {
 		List<SourceRecord> result = new ArrayList<>();
 		for (Component c : mResult.components) {
 			for (Measure m : c.measures) {
-				Struct struct = new Struct( SonarSchema.sonarmeasure );
+				Struct struct = new Struct(SonarSchema.sonarmeasure);
 				struct.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
 				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
@@ -158,7 +157,7 @@ public class SonarSourceTask extends SourceTask {
 					try {
 						float intvalue = Float.parseFloat(m.value);
 						struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
-					} catch ( NumberFormatException nfe ) {
+					} catch (NumberFormatException nfe) {
 						nfe.printStackTrace();
 					}
 				}
@@ -167,7 +166,6 @@ public class SonarSourceTask extends SourceTask {
 				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarSchema.sonarmeasure , struct);
 				result.add(sr);
 			}
-			
 		}
 		log.info("Found {} metrics", result.size());
 		return result;
@@ -178,7 +176,7 @@ public class SonarSourceTask extends SourceTask {
 	private List<SourceRecord>  getSonarIssueRecords(SonarIssuesResult iResult, String snapshotDateString) {
 		List<SourceRecord> result = new ArrayList<>();
 		for (Issue i : iResult.issues) {
-			Struct struct = new Struct( SonarSchema.sonarissue );
+			Struct struct = new Struct(SonarSchema.sonarissue);
 			struct.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_SEVERITY, i.severity);
