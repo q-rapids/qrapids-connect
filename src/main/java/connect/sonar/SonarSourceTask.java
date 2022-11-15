@@ -117,7 +117,7 @@ public class SonarSourceTask extends SourceTask {
 			do {
 				page++;
 				iResult = SonarApi.getIssues(sonarToken, sonarProjectKeys, page);
-				records.addAll( getSonarIssueRecords(iResult, snapshotDateString) );
+				records.addAll(getSonarIssueRecords(iResult, snapshotDateString));
 			} while (page*iResult.paging.pageSize < iResult.paging.total);
 
 			page = 0;
@@ -178,6 +178,7 @@ public class SonarSourceTask extends SourceTask {
 		for (Issue i : iResult.issues) {
 			Struct struct = new Struct(SonarSchema.sonarissue);
 			struct.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
+			struct.put(SonarSchema.FIELD_SONAR_ISSUE_KEY, i.key);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_SEVERITY, i.severity);
 			struct.put(SonarSchema.FIELD_SONAR_ISSUE_COMPONENT, i.component);

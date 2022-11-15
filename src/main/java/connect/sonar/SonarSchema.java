@@ -13,9 +13,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
  * @author Max Tiessler
  */
 public class SonarSchema {
-	
 
-	public static String FIELD_SONAR_URL = "sonarUrl";
+
 	public static String FIELD_SONAR_SNAPSHOT_DATE = "snapshotDate";
 	
 	// Measures
@@ -57,7 +56,6 @@ public class SonarSchema {
 	 * Schema Sonar Measures
 	 */
 	public static Schema sonarmeasure = SchemaBuilder.struct().name("sonarmeasure")
-			.field(FIELD_SONAR_URL, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_SNAPSHOT_DATE, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_MEASURE_BASECOMPONENT_ID, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, Schema.OPTIONAL_STRING_SCHEMA)
@@ -79,7 +77,6 @@ public class SonarSchema {
 	 * Schema Sonar Issues
 	 */
 	public static Schema sonarissue = SchemaBuilder.struct().name("sonarissue")
-			.field(FIELD_SONAR_URL, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_SNAPSHOT_DATE, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_KEY, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(FIELD_SONAR_ISSUE_RULE, Schema.OPTIONAL_STRING_SCHEMA)
