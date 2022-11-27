@@ -100,10 +100,9 @@ public class SonarSourceTask extends SourceTask {
 		List<SourceRecord> records = new ArrayList<>(); 
 
 		if (lastPoll != 0 && System.currentTimeMillis() < (lastPoll + (interval * 1000))) {
-				log.info("exit polling {} secs since last poll.",
-						( System.currentTimeMillis() - lastPoll ) / 1000 );
-				Thread.sleep(1000);
-				return records;
+			Thread.sleep(1000);
+			log.info("sleeping task");
+			return records;
 		}
 
 		lastPoll = System.currentTimeMillis();
@@ -136,34 +135,34 @@ public class SonarSourceTask extends SourceTask {
 		List<SourceRecord> result = new ArrayList<>();
 		for (Component c : mResult.components) {
 			for (Measure m : c.measures) {
-				Struct struct = new Struct(SonarSchema.sonarmeasure);
-				struct.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
+				Struct measure = new Struct(SonarSchema.sonarmeasure);
+				measure.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_KEY, mResult.baseComponent.key);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
 
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, c.qualifier);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, c.path);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, c.language);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, c.qualifier);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, c.path);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, c.language);
 
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
-				struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
 				
 				if (m.value != null) {
 					try {
 						float intvalue = Float.parseFloat(m.value);
-						struct.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
+						measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_FLOATVALUE, intvalue );
 					} catch (NumberFormatException nfe) {
 						nfe.printStackTrace();
 					}
 				}
 				Map<String,String> hm = new HashMap<>();
 				hm.put("2", "2");
-				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarSchema.sonarmeasure , struct);
+				SourceRecord sr = new SourceRecord(hm, hm, sonarMeasureTopic, SonarSchema.sonarmeasure , measure);
 				result.add(sr);
 			}
 		}
@@ -203,6 +202,7 @@ public class SonarSourceTask extends SourceTask {
 			m.put("2", "2");
 			
 			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarSchema.sonarissue , struct);
+			//log.info("Source record: {}", sr);
 			result.add(sr);
 		}
 		log.info("Found {} issues ", result.size());
