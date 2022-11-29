@@ -8,7 +8,7 @@ package model.sonarCloud.measures;
 
 /**
  * BaseComponent API result
- * @author Axel Wickenkamp
+ * @author Axel Wickenkamp & Max Tiessler
  *
  */
 public class BaseComponent {

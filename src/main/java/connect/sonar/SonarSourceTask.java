@@ -6,11 +6,11 @@
 
 package connect.sonar;
 
-import model.sonarqube.issues.Issue;
-import model.sonarqube.issues.SonarIssuesResult;
-import model.sonarqube.measures.Component;
-import model.sonarqube.measures.Measure;
-import model.sonarqube.measures.SonarMeasuresResult;
+import model.sonarCloud.issues.Issue;
+import model.sonarCloud.issues.SonarCloudIssuesResult;
+import model.sonarCloud.measures.Component;
+import model.sonarCloud.measures.Measure;
+import model.sonarCloud.measures.SonarCloudMeasuresResult;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -112,7 +112,7 @@ public class SonarSourceTask extends SourceTask {
 		int page = 0;
 		
 		if (sonarProjectKeys != null && !sonarProjectKeys.isEmpty()) {
-			SonarIssuesResult iResult;
+			SonarCloudIssuesResult iResult;
 			do {
 				page++;
 				iResult = SonarApi.getIssues(sonarToken, sonarProjectKeys, page);
@@ -120,7 +120,7 @@ public class SonarSourceTask extends SourceTask {
 			} while (page*iResult.paging.pageSize < iResult.paging.total);
 
 			page = 0;
-			SonarMeasuresResult smr;
+			SonarCloudMeasuresResult smr;
 			do {
 				page++;
 				smr = SonarApi.getMeasures(sonarToken, sonarProjectKeys, sonarMetricKeys, page);
@@ -130,7 +130,7 @@ public class SonarSourceTask extends SourceTask {
 		return records;
 	}
 
-	private List<SourceRecord>  getSonarMeasureRecords(SonarMeasuresResult mResult, String snapshotDateString) {
+	private List<SourceRecord>  getSonarMeasureRecords(SonarCloudMeasuresResult mResult, String snapshotDateString) {
 		
 		List<SourceRecord> result = new ArrayList<>();
 		for (Component c : mResult.components) {
@@ -172,7 +172,7 @@ public class SonarSourceTask extends SourceTask {
 
 	
 
-	private List<SourceRecord>  getSonarIssueRecords(SonarIssuesResult iResult, String snapshotDateString) {
+	private List<SourceRecord>  getSonarIssueRecords(SonarCloudIssuesResult iResult, String snapshotDateString) {
 		List<SourceRecord> result = new ArrayList<>();
 		for (Issue i : iResult.issues) {
 			Struct struct = new Struct(SonarSchema.sonarissue);

@@ -3,8 +3,8 @@
 package connect.sonar;
 
 import com.google.gson.Gson;
-import model.sonarqube.issues.SonarIssuesResult;
-import model.sonarqube.measures.SonarMeasuresResult;
+import model.sonarCloud.issues.SonarCloudIssuesResult;
+import model.sonarCloud.measures.SonarCloudMeasuresResult;
 import rest.RESTInvoker;
 
 /**
@@ -18,7 +18,7 @@ public class SonarApi {
 		throw new IllegalStateException("Api Utility Class");
 	}
 
-	public static SonarMeasuresResult getMeasures(String cloudToken, String cloudProjectKey, String metricKeys, int pageIndex) {
+	public static SonarCloudMeasuresResult getMeasures(String cloudToken, String cloudProjectKey, String metricKeys, int pageIndex) {
 		
 		RESTInvoker ri = new RESTInvoker("https://"
 				+ cloudToken + "@sonarcloud.io"
@@ -30,10 +30,10 @@ public class SonarApi {
 				null);
 		
 		Gson  gson = new Gson();
-		return gson.fromJson(ri.getDataFromServer(""), SonarMeasuresResult.class);
+		return gson.fromJson(ri.getDataFromServer(""), SonarCloudMeasuresResult.class);
 	}
 	
-	public static SonarIssuesResult getIssues(String cloudToken, String cloudProjectKeys, int p) {
+	public static SonarCloudIssuesResult getIssues(String cloudToken, String cloudProjectKeys, int p) {
 		RESTInvoker ri = new RESTInvoker("https://"
 				+ cloudToken + "@sonarcloud.io"
 				+ "/api/issues/search?projectKeys=" + cloudProjectKeys
@@ -41,7 +41,7 @@ public class SonarApi {
 				+ "&types=CODE_SMELL,BUG,VULNERABILITY", null);
 		
 		Gson  gson = new Gson();
-		return gson.fromJson(ri.getDataFromServer(""), SonarIssuesResult.class);
+		return gson.fromJson(ri.getDataFromServer(""), SonarCloudIssuesResult.class);
 	}
 	
 }

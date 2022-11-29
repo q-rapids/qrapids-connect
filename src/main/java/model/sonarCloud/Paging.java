@@ -8,8 +8,7 @@ package model.sonarCloud;
 
 /**
  * Paging API result
- * @author Axel Wickenkamp
- *
+ * @author Axel Wickenkamp & Max Tiessler
  */
 public class Paging {
 	
