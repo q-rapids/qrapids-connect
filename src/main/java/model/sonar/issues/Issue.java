@@ -3,7 +3,7 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarCloud.issues;
+package model.sonar.issues;
 
 /**
  * SonarCloud Issues API result

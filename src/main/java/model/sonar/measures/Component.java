@@ -4,7 +4,7 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarCloud.measures;
+package model.sonar.measures;
 
 /**
  * Component API result

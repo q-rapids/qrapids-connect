@@ -6,11 +6,11 @@
 
 package connect.sonar;
 
-import model.sonarCloud.issues.Issue;
-import model.sonarCloud.issues.SonarCloudIssuesResult;
-import model.sonarCloud.measures.Component;
-import model.sonarCloud.measures.Measure;
-import model.sonarCloud.measures.SonarCloudMeasuresResult;
+import model.sonar.issues.Issue;
+import model.sonar.issues.SonarCloudIssuesResult;
+import model.sonar.measures.Component;
+import model.sonar.measures.Measure;
+import model.sonar.measures.SonarCloudMeasuresResult;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -106,9 +106,9 @@ public class SonarSourceTask extends SourceTask {
 		}
 
 		lastPoll = System.currentTimeMillis();
-		
+
 		String snapshotDateString = ymd.format(snapshotDate);
-		
+
 		int page = 0;
 		
 		if (sonarProjectKeys != null && !sonarProjectKeys.isEmpty()) {
@@ -117,15 +117,15 @@ public class SonarSourceTask extends SourceTask {
 				page++;
 				iResult = SonarApi.getIssues(sonarToken, sonarProjectKeys, page);
 				records.addAll(getSonarIssueRecords(iResult, snapshotDateString));
-			} while (page*iResult.paging.pageSize < iResult.paging.total);
+			} while (page * iResult.paging.pageSize < iResult.paging.total);
 
 			page = 0;
-			SonarCloudMeasuresResult smr;
+			SonarCloudMeasuresResult mResult;
 			do {
 				page++;
-				smr = SonarApi.getMeasures(sonarToken, sonarProjectKeys, sonarMetricKeys, page);
-				records.addAll(getSonarMeasureRecords(smr, snapshotDateString));
-			} while (page * smr.paging.pageSize < smr.paging.total);
+				mResult = SonarApi.getMeasures(sonarToken, sonarProjectKeys, sonarMetricKeys, page);
+				records.addAll(getSonarMeasureRecords(mResult, snapshotDateString));
+			} while (page * mResult.paging.pageSize < mResult.paging.total);
 		}
 		return records;
 	}
@@ -133,8 +133,8 @@ public class SonarSourceTask extends SourceTask {
 	private List<SourceRecord>  getSonarMeasureRecords(SonarCloudMeasuresResult mResult, String snapshotDateString) {
 		
 		List<SourceRecord> result = new ArrayList<>();
-		for (Component c : mResult.components) {
-			for (Measure m : c.measures) {
+		for (Component componente : mResult.components) {
+			for (Measure m : componente.measures) {
 				Struct measure = new Struct(SonarSchema.sonarmeasure);
 				measure.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
 				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_ID, mResult.baseComponent.id);
@@ -142,12 +142,12 @@ public class SonarSourceTask extends SourceTask {
 				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_NAME, mResult.baseComponent.name);
 				measure.put(SonarSchema.FIELD_SONAR_MEASURE_BASECOMPONENT_QUALIFIER, mResult.baseComponent.qualifier);
 
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, c.id);
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, c.key);
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, c.name);
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, c.qualifier);
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, c.path);
-				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, c.language);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_ID, componente.id);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_KEY, componente.key);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_NAME, componente.name);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_QUALIFIER, componente.qualifier);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_PATH, componente.path);
+				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_LANGUAGE, componente.language);
 
 				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_METRIC, m.metric);
 				measure.put(SonarSchema.FIELD_SONAR_MEASURE_COMPONENT_VALUE, m.value );
@@ -174,34 +174,34 @@ public class SonarSourceTask extends SourceTask {
 
 	private List<SourceRecord>  getSonarIssueRecords(SonarCloudIssuesResult iResult, String snapshotDateString) {
 		List<SourceRecord> result = new ArrayList<>();
-		for (Issue i : iResult.issues) {
-			Struct struct = new Struct(SonarSchema.sonarissue);
-			struct.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_KEY, i.key);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_RULE, i.rule);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_SEVERITY, i.severity);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_COMPONENT, i.component);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_COMPONENTID, i.componentId);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_PROJECT, i.project);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_LINE, i.line);
-			if (i.textRange!= null) {
-				struct.put(SonarSchema.FIELD_SONAR_ISSUE_STARTLINE, i.textRange.startLine);
-				struct.put(SonarSchema.FIELD_SONAR_ISSUE_STARTOFFSET, i.textRange.startOffset);
-				struct.put(SonarSchema.FIELD_SONAR_ISSUE_ENDLINE, i.textRange.endLine);
-				struct.put(SonarSchema.FIELD_SONAR_ISSUE_ENDOFFSET, i.textRange.endOffset);
+		for (Issue issue : iResult.issues) {
+			Struct auxIssue = new Struct(SonarSchema.sonarissue);
+			auxIssue.put(SonarSchema.FIELD_SONAR_SNAPSHOT_DATE, snapshotDateString);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_KEY, issue.key);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_RULE, issue.rule);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_SEVERITY, issue.severity);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_COMPONENT, issue.component);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_COMPONENTID, issue.componentId);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_PROJECT, issue.project);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_LINE, issue.line);
+			if (issue.textRange!= null) {
+				auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_STARTLINE, issue.textRange.startLine);
+				auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_STARTOFFSET, issue.textRange.startOffset);
+				auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_ENDLINE, issue.textRange.endLine);
+				auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_ENDOFFSET, issue.textRange.endOffset);
 			}
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_STATUS, i.status);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_MESSAGE, i.message);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_EFFORT, i.effort);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_DEBT, i.debt);
-			struct.put(SonarSchema.FIELD_SONAR_TYPE, i.type);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_AUTHOR, i.author);
-			struct.put(SonarSchema.FIELD_SONAR_ISSUE_CREATIONDATE, i.creationDate);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_STATUS, issue.status);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_MESSAGE, issue.message);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_EFFORT, issue.effort);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_DEBT, issue.debt);
+			auxIssue.put(SonarSchema.FIELD_SONAR_TYPE, issue.type);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_AUTHOR, issue.author);
+			auxIssue.put(SonarSchema.FIELD_SONAR_ISSUE_CREATIONDATE, issue.creationDate);
 
 			Map<String,String> m = new HashMap<>();
 			m.put("2", "2");
 			
-			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarSchema.sonarissue , struct);
+			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarSchema.sonarissue , auxIssue);
 			//log.info("Source record: {}", sr);
 			result.add(sr);
 		}

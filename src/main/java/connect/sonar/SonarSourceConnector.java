@@ -46,6 +46,9 @@ public class SonarSourceConnector extends SourceConnector {
 	public void start(Map<String, String> props) {
 		String propsAux = props.toString();
 		log.info("properties: {}", propsAux);
+		if (props.get(SonarSourceConfig.SONAR_TOKEN_CONFIG) == null
+				|| props.get(SonarSourceConfig.SONAR_TOKEN_CONFIG).isEmpty())
+			throw new ConnectException("SonarqubeSourceConnector configuration must include 'cloud.token' setting");
 		cloudToken = props.get(SonarSourceConfig.SONAR_TOKEN_CONFIG);
 		cloudOrganizationName = props.get(SonarSourceConfig.SONAR_ORGANIZATION_NAME_CONFIG);
 		cloudOrganizationKey = props.get(SonarSourceConfig.SONAR_ORGANIZATION_KEY_CONFIG);
@@ -55,8 +58,7 @@ public class SonarSourceConnector extends SourceConnector {
 		sonarIssueTopic = props.get(SonarSourceConfig.SONAR_ISSUE_TOPIC_CONFIG);
 		sonarInterval = props.get(SonarSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG);
 		sonarSnapshotDate = props.get(SonarSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
-		if ( cloudToken == null || cloudToken.isEmpty() )
-			throw new ConnectException("SonarqubeSourceConnector configuration must include 'cloud.token' setting");
+
 	}
 
 	@Override

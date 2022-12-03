@@ -4,9 +4,9 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarCloud.measures;
+package model.sonar.measures;
 
-import model.sonarCloud.Paging;
+import model.sonar.Paging;
 
 /**
  * SonarcubeMeasuresResult API result

@@ -3,8 +3,8 @@
 package connect.sonar;
 
 import com.google.gson.Gson;
-import model.sonarCloud.issues.SonarCloudIssuesResult;
-import model.sonarCloud.measures.SonarCloudMeasuresResult;
+import model.sonar.issues.SonarCloudIssuesResult;
+import model.sonar.measures.SonarCloudMeasuresResult;
 import rest.RESTInvoker;
 
 /**
