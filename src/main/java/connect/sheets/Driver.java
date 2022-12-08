@@ -1,5 +1,6 @@
 package connect.sheets;
 
+import connect.sheets.googlesheets.SheetsSourceTask;
 import org.apache.kafka.connect.source.SourceRecord;
 import util.PropertyFile;
 

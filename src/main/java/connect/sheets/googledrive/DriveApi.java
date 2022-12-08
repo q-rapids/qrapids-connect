@@ -1,4 +1,4 @@
-package connect.sheets;
+package connect.sheets.googledrive;
 
 import com.google.api.client.googleapis.batch.BatchRequest;
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback;
@@ -15,6 +15,8 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import connect.sheets.AuthorizationCredentials;
+import connect.sheets.exceptions.AuthorizationCredentialsException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

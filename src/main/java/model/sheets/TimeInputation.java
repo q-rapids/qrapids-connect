@@ -2,9 +2,9 @@ package model.sheets;
 
 
 public class TimeInputation {
-
-    public String sheetId;
     public String sprintName;
+
+    // public String activityType;
     public Double sprintHours;
 
 }

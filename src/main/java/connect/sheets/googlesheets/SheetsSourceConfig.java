@@ -3,7 +3,7 @@
  * terms of the Apache License 2.0 license
  */
 
-package connect.sheets;
+package connect.sheets.googlesheets;
 
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
@@ -20,63 +20,60 @@ public class SheetsSourceConfig extends AbstractConfig {
 
     /*----Authentication----*/
 
-    public static final String SHEET_TYPE = "sheet.type";
-    public static final String SHEET_TYPE_CONFIG_DISPLAY = "Connection type";
-    public static final String SHEET_TYPE_CONFIG_DOC = "Connection type to use when connecting to Google Sheets API.";
+    public static final String ACCOUNT_TYPE = "account.type";
+    public static final String ACCOUNT_TYPE_CONFIG_DISPLAY = "Account type";
+    public static final String ACCOUNT_TYPE_CONFIG_DOC = "Account type to use when connecting to Google Cloud.";
 
     public static final String SHEET_PROJECT_ID = "project.id";
     public static final String SHEET_PROJECT_ID_CONFIG_DISPLAY = "Project ID";
-    public static final String SHEET_PROJECT_ID_CONFIG_DOC = "Project ID to use when connecting to Google Sheets API.";
+    public static final String SHEET_PROJECT_ID_CONFIG_DOC = "Project ID to use when connecting to Google Cloud.";
 
     public static final String SHEET_PRIVATE_KEY_ID = "private.key.id";
     public static final String SHEET_PRIVATE_KEY_ID_CONFIG_DISPLAY = "Private key ID";
-    public static final String SHEET_PRIVATE_KEY_ID_CONFIG_DOC = "Private key ID to use when connecting to Google Sheets API.";
+    public static final String SHEET_PRIVATE_KEY_ID_CONFIG_DOC = "Private key ID to use when connecting to Google Cloud.";
 
     public static final String SHEET_PRIVATE_KEY = "private.key";
     public static final String SHEET_PRIVATE_KEY_CONFIG_DISPLAY = "Private Key";
-    public static final String SHEET_PRIVATE_KEY_CONFIG_DOC = "Private key to use when connecting to Google Sheets API.";
+    public static final String SHEET_PRIVATE_KEY_CONFIG_DOC = "Private key to use when connecting to Google Cloud.";
 
     public static final String SHEET_CLIENT_EMAIL = "client.email";
     public static final String SHEET_CLIENT_EMAIL_CONFIG_DISPLAY = "Client email";
-    public static final String SHEET_CLIENT_EMAIL_CONFIG_DOC = "Client email to use when connecting to Google Sheets API.";
+    public static final String SHEET_CLIENT_EMAIL_CONFIG_DOC = "Client email to use when connecting to Google Cloud.";
 
     public static final String SHEET_CLIENT_ID = "client.id";
     public static final String SHEET_CLIENT_ID_CONFIG_DISPLAY = "Client ID";
-    public static final String SHEET_CLIENT_ID_CONFIG_DOC = "Client ID to use when connecting to Google Sheets API.";
+    public static final String SHEET_CLIENT_ID_CONFIG_DOC = "Client ID to use when connecting to Google Cloud.";
 
     public static final String SHEET_AUTH_URI = "auth.uri";
     public static final String SHEET_AUTH_URI_CONFIG_DISPLAY = "Authorization URI";
-    public static final String SHEET_AUTH_URI_CONFIG_DOC = "Authorization URI to use when connecting to Google Sheets API.";
+    public static final String SHEET_AUTH_URI_CONFIG_DOC = "Authorization URI to use when connecting to Google Cloud.";
 
     public static final String SHEET_TOKEN_URI = "token.uri";
     public static final String SHEET_TOKEN_URI_CONFIG_DISPLAY = "Token URI";
-    public static final String SHEET_TOKEN_URI_CONFIG_DOC = "Token URI to use when connecting to Google Sheets API.";
+    public static final String SHEET_TOKEN_URI_CONFIG_DOC = "Token URI to use when connecting to Google Cloud.";
 
     public static final String SHEET_AUTH_PROVIDER_URL = "auth.provider.x509.cert.url";
     public static final String SHEET_AUTH_PROVIDER_URL_CONFIG_DISPLAY = "Authorization provider URL";
-    public static final String SHEET_AUTH_PROVIDER_URL_CONFIG_DOC = "Authorization provider URL to use when connecting to Google Sheets API.";
+    public static final String SHEET_AUTH_PROVIDER_URL_CONFIG_DOC = "Authorization provider URL to use when connecting to Google Cloud.";
 
     public static final String SHEET_CLIENT_CERTIFICATION_URL = "client.x509.cert.url";
     public static final String SHEET_CLIENT_CERTIFICATION_URL_CONFIG_DISPLAY = "Client authorization URL";
-    public static final String SHEET_CLIENT_CERTIFICATION_URL_CONFIG_DOC = "Client authorization URL to use when connecting to Google Sheets API.";
+    public static final String SHEET_CLIENT_CERTIFICATION_URL_CONFIG_DOC = "Client authorization URL to use when connecting to Google Cloud.";
     /*---------------------*/
 
     /*----Subject Information----*/
     public static final String SPREADSHEET_ID = "spreadsheet.id";
-    public static final String SPREADSHEET_IDS_CONFIG_DISPLAY = "Spreadsheet ID";
-    public static final String SPREADSHEET_IDS_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
+    public static final String SPREADSHEET_ID_CONFIG_DISPLAY = "Spreadsheet ID";
+    public static final String SPREADSHEET_ID_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
 
     public static final String SHEET_SPRINT_NAMES = "sprint.names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DISPLAY = "Sprint names";
     public static final String SHEET_SPRINT_NAMES_CONFIG_DOC = "Sprint names of the project to use when connecting to Google Sheets API";
 
     public static final String SHEET_TEAM_NAME = "team.name";
-    public static final String SHEET_TEAM_NAMES_CONFIG_DISPLAY = "Team name";
-    public static final String SHEET_TEAM_NAMES_CONFIG_DOC = "Team name of the project";
+    public static final String SHEET_TEAM_NAME_CONFIG_DISPLAY = "Team name";
+    public static final String SHEET_TEAM_NAME_CONFIG_DOC = "Team name of the project";
 
-    public static final String SHEET_TEAM_NUMBER_MEMBERS = "team.number.members";
-    public static final String SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DISPLAY = "Number of members";
-    public static final String SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DOC = "Number of members of the project to use when connecting to Google Sheets API";
     /*---------------------*/
 
     /*---- Kafka ----*/
@@ -98,19 +95,19 @@ public class SheetsSourceConfig extends AbstractConfig {
                 .define(SPREADSHEET_ID,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
-                        SPREADSHEET_IDS_CONFIG_DOC,
+                        SPREADSHEET_ID_CONFIG_DOC,
                         SHEET_GROUP,
                         1,
                         ConfigDef.Width.SHORT,
-                        SPREADSHEET_IDS_CONFIG_DISPLAY)
-                .define(SHEET_TYPE,
+                        SPREADSHEET_ID_CONFIG_DISPLAY)
+                .define(ACCOUNT_TYPE,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
-                        SHEET_TYPE_CONFIG_DOC,
+                        ACCOUNT_TYPE_CONFIG_DOC,
                         SHEET_GROUP,
                         2,
                         ConfigDef.Width.SHORT,
-                        SHEET_TYPE_CONFIG_DISPLAY)
+                        ACCOUNT_TYPE_CONFIG_DISPLAY)
                 .define(SHEET_PROJECT_ID,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
@@ -192,20 +189,12 @@ public class SheetsSourceConfig extends AbstractConfig {
                         12,
                         ConfigDef.Width.SHORT,
                         SHEET_INTERVAL_SECONDS_CONFIG_DISPLAY)
-                .define(SHEET_TEAM_NUMBER_MEMBERS,
-                        ConfigDef.Type.STRING,
-                        ConfigDef.Importance.HIGH,
-                        SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DOC,
-                        SHEET_GROUP,
-                        13,
-                        ConfigDef.Width.LONG,
-                        SHEET_TEAM_NUMBER_MEMBERS_CONFIG_DISPLAY)
                 .define(SHEET_SPRINT_NAMES,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
                         SHEET_SPRINT_NAMES_CONFIG_DOC,
                         SHEET_GROUP,
-                        14,
+                        13,
                         ConfigDef.Width.LONG,
                         SHEET_SPRINT_NAMES_CONFIG_DISPLAY)
                 .define(SHEET_HOUR_TOPIC_CONFIG,
@@ -214,17 +203,17 @@ public class SheetsSourceConfig extends AbstractConfig {
                         ConfigDef.Importance.LOW,
                         SHEET_HOUR_TOPIC_CONFIG_DOC,
                         SHEET_GROUP,
-                        15,
+                        14,
                         ConfigDef.Width.LONG,
                         SHEET_HOUR_TOPIC_CONFIG_DISPLAY)
                 .define(SHEET_TEAM_NAME,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.LOW,
-                        SHEET_TEAM_NAMES_CONFIG_DOC,
+                        SHEET_TEAM_NAME_CONFIG_DOC,
                         SHEET_GROUP,
                         15,
                         ConfigDef.Width.LONG,
-                        SHEET_TEAM_NAMES_CONFIG_DISPLAY);
+                        SHEET_TEAM_NAME_CONFIG_DISPLAY);
     }
 
     public SheetsSourceConfig(Map<String, String> originals) {

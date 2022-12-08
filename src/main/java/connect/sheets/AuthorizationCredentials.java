@@ -2,6 +2,11 @@ package connect.sheets;
 
 
 import com.google.gson.annotations.Expose;
+import connect.sheets.googlesheets.SheetsSourceConfig;
+import org.apache.kafka.connect.errors.ConnectException;
+
+import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -75,49 +80,63 @@ public final class AuthorizationCredentials {
 
 
 
-    public AuthorizationCredentials(final String type,
-                                    final String project_id,
-                                    final String privateKeyID,
-                                    final String privateKey,
-                                    final String clientEmail,
-                                    final String clientID,
-                                    final String authURI,
-                                    final String tokenURI,
-                                    final String authProvider,
-                                    final String clientCert) {
-        this.type = type;
-        this.project_id = project_id;
-        this.private_key_id = privateKeyID;
-        this.private_key = privateKey;
-        this.client_email = clientEmail;
-        this.client_id = clientID;
-        this.auth_uri = authURI;
-        this.token_uri = tokenURI;
-        this.auth_provider_x509_cert_url = authProvider;
-        this.client_x509_cert_url = clientCert;
+    public AuthorizationCredentials(Map<String, String> properties) {
+        this.type = properties.get(SheetsSourceConfig.ACCOUNT_TYPE);
+        if (this.type == null || Objects.equals(properties.get(SheetsSourceConfig.ACCOUNT_TYPE), "")) {
+            throw new ConnectException("SheetsConnector configuration must include account.type setting");
+        }
+
+        this.project_id = properties.get(SheetsSourceConfig.SHEET_PROJECT_ID);
+        if (this.project_id == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_PROJECT_ID), "")) {
+            throw new ConnectException("SheetsConnector configuration must include project.id setting");
+        }
+
+        this.private_key_id = properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID);
+        if (this.private_key_id == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID), "")) {
+            throw new ConnectException("SheetsConnector configuration must include private.key.id setting");
+        }
+
+        this.private_key = properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY);
+        if (this.private_key == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY), "")) {
+            throw new ConnectException("SheetsConnector configuration must include private.key setting");
+        }
+
+        this.client_email = properties.get(SheetsSourceConfig.SHEET_CLIENT_EMAIL);
+        if (this.client_email == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_CLIENT_EMAIL), "")) {
+            throw new ConnectException("SheetsConnector configuration must include client.email setting");
+        }
+
+        this.client_id = properties.get(SheetsSourceConfig.SHEET_CLIENT_ID);
+        if (this.client_id == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_CLIENT_ID), "")) {
+            throw new ConnectException("SheetsConnector configuration must include client.id setting");
+        }
+
+        this.auth_uri = properties.get(SheetsSourceConfig.SHEET_AUTH_URI);
+        if (this.auth_uri == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_AUTH_URI), "")) {
+            throw new ConnectException("SheetsConnector configuration must include auth.uri setting");
+        }
+
+        this.token_uri = properties.get(SheetsSourceConfig.SHEET_TOKEN_URI);
+        if (this.token_uri == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_TOKEN_URI), "")) {
+            throw new ConnectException("SheetsConnector configuration must include token.uri setting");
+        }
+
+        this.auth_provider_x509_cert_url = properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL);
+        if (this.auth_provider_x509_cert_url == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL), "")) {
+            throw new ConnectException("SheetsConnector configuration must include auth.provider.x509.cert.url setting");
+        }
+
+        this.client_x509_cert_url = properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL);
+        if (this.client_x509_cert_url == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL), "")) {
+            throw new ConnectException("SheetsConnector configuration must include client.x509.cert.url setting");
+        }
     }
 
-    public static AuthorizationCredentials getInstance(final String type,
-                                                       final String projectId,
-                                                       final String privateKeyID,
-                                                       final String privateKey,
-                                                       final String clientEmail,
-                                                       final String clientID,
-                                                       final String authURI,
-                                                       final String tokenURI,
-                                                       final String authProvider,
-                                                       final String clientCert) {
+    public static AuthorizationCredentials getInstance(Map<String, String> properties) {
+
+
         if (instance == null) {
-            instance = new AuthorizationCredentials(type,
-             projectId,
-             privateKeyID,
-             privateKey,
-             clientEmail,
-             clientID,
-             authURI,
-             tokenURI,
-             authProvider,
-             clientCert);
+            instance = new AuthorizationCredentials(properties);
         }
         return instance;
     }

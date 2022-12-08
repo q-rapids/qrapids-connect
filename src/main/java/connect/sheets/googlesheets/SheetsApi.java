@@ -1,4 +1,4 @@
-package connect.sheets;
+package connect.sheets.googlesheets;
 
 import com.google.api.client.googleapis.json.GoogleJsonError;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
@@ -13,6 +13,8 @@ import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import connect.sheets.AuthorizationCredentials;
+import connect.sheets.exceptions.AuthorizationCredentialsException;
 
 
 import java.io.ByteArrayInputStream;
@@ -20,6 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 public class SheetsApi {
@@ -27,6 +31,8 @@ public class SheetsApi {
 	private static Sheets sheetsService;
 
 	private static int requestsDone = 0;
+
+	private static final Logger sheetLogger = Logger.getLogger(SheetsApi.class.getName());
 
 	/**
 	 * Creates a new google sheet spreadsheet
@@ -115,7 +121,7 @@ public class SheetsApi {
 		return new Sheets.Builder(new NetHttpTransport(),
 				GsonFactory.getDefaultInstance(),
 				requestInitializer)
-				.setApplicationName("Sheets samples")
+				.setApplicationName("PES-Sheets")
 				.build();
 	}
 
@@ -213,42 +219,68 @@ public class SheetsApi {
 		return "anonymous";
 	}
 
-	private static List<String> generateRanges(final String[] sprintNames,
-										 final Integer numberMembers) {
+	private static List<String> generateRangesForMemberTotalHours(final String[] sprintNames, final Integer numberMembers) {
+
 		ArrayList<String> rangeSet = new ArrayList<>();
 		for (String sprint : sprintNames) {
 			StringBuilder range = new StringBuilder();
 			range.append(sprint)
 					.append("!")
-					.append("I10:")
+					.append("I8:")
 					.append("J")
-					.append(10 + (numberMembers - 1));
+					.append(8 + (numberMembers - 1));
 			rangeSet.add(range.toString());
 		}
 		return rangeSet;
 	}
-	public static List<ValueRange> getTeamValues(final String[] sprintNames,
-													   final Integer numberMembers,
-													   final String spreadsheetId)
-			throws IOException, AuthorizationCredentialsException {
+	private static Integer getNumberOfMembers(final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
 		Sheets service = getSheetsService();
+		ArrayList<String> rangeSet = new ArrayList<>();
+		StringBuilder range = new StringBuilder().append("Panell de control!U4");
+		rangeSet.add(range.toString());
+		BatchGetValuesResponse batchGetValuesResponse = service.spreadsheets().values().batchGet(spreadsheetId)
+				.setRanges(rangeSet).execute();
+		List<ValueRange> numberOfMembersValueRanges = batchGetValuesResponse.getValueRanges();
+		for (ValueRange valueNumberMembers : numberOfMembersValueRanges) {
+			for (Object numberMembersObject : valueNumberMembers.getValues()) {
+				String numberAux = numberMembersObject.toString()
+						.substring(1,numberMembersObject.toString().length() - 1);
+				return Integer.valueOf(numberAux);
+			}
+		}
+		return 0;
+	}
+
+	private static BatchGetValuesResponse getValueRangesGoogleSheets(final String[] sprintNames,
+																	 final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
+		Sheets service = getSheetsService();
+		List <String> memberHourRanges = generateRangesForMemberTotalHours(sprintNames,
+				getNumberOfMembers(spreadsheetId));
+		return service.spreadsheets().values().batchGet(spreadsheetId)
+				.setRanges(memberHourRanges).execute();
+	}
+	public static List<ValueRange> getMembersTotalHours(final String[] sprintNames,
+														final String spreadsheetId)
+			throws IOException, AuthorizationCredentialsException {
 		BatchGetValuesResponse result = null;
-		List <String> ranges = generateRanges(sprintNames, numberMembers);
 		try {
 			// Gets the values of the cells in the specified range.
-			result = service.spreadsheets().values().batchGet(spreadsheetId)
-					.setRanges(ranges).execute();
-			System.out.printf("%d ranges retrieved.", result.getValueRanges().size());
+			result = getValueRangesGoogleSheets(sprintNames, spreadsheetId);
+			sheetLogger.log(Level.INFO, "Retrieved {} member hours ranges", result.getValueRanges().size());
 		} catch (GoogleJsonResponseException e) {
 			GoogleJsonError error = e.getDetails();
 			if (error.getCode() == 404) {
-				System.out.printf("Spreadsheet not found with id '%s'.\n", spreadsheetId);
+				sheetLogger.log(Level.WARNING, "Spreadsheet {} not found", spreadsheetId);
 			} else {
 				throw e;
 			}
 		}
-		List<ValueRange> resultValueRanges = result.getValueRanges();
-		return resultValueRanges;
+		if (result != null) {
+			return result.getValueRanges();
+		} else {
+			return Collections.emptyList();
+		}
+
 	}
 }
 

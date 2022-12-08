@@ -1,12 +1,14 @@
-package connect.sheets;
+package connect.sheets.googlesheets;
 
 
 import com.google.api.services.sheets.v4.model.ValueRange;
+import connect.sheets.AuthorizationCredentials;
+import connect.sheets.exceptions.AuthorizationCredentialsException;
 import model.sheets.Developer;
 import model.sheets.TeamInformation;
 import model.sheets.TimeInputation;
-import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
@@ -14,8 +16,10 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Kafka Connect SourceTask class for Google Sheets
@@ -38,38 +42,44 @@ public class SheetsSourceTask extends SourceTask {
 
     private String spreadSheetId;
 
-    private String numberTeamMembers;
-
     private String teamName;
 
     private String[] sprints;
-    private String timeTopic;
+    private String sheetHourTopic;
 
     private AuthorizationCredentials authorizationCredentials;
-    private final Logger taskLogger = Logger.getLogger(SheetsSourceTask.class.getName());
+    private final Logger taskLogger = LoggerFactory.getLogger(SheetsSourceTask.class.getName());
 
     private void initializeAuthorizationCredentials(final Map<String, String> properties) {
         taskLogger.info("connect-sheets // TASK: Initialize Authorization credentials");
-        authorizationCredentials = AuthorizationCredentials.getInstance(
-                properties.get(SheetsSourceConfig.SHEET_TYPE),
-                properties.get(SheetsSourceConfig.SHEET_PROJECT_ID),
-                properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID),
-                properties.get(SheetsSourceConfig.SHEET_PRIVATE_KEY),
-                properties.get(SheetsSourceConfig.SHEET_CLIENT_EMAIL),
-                properties.get(SheetsSourceConfig.SHEET_CLIENT_ID),
-                properties.get(SheetsSourceConfig.SHEET_AUTH_URI),
-                properties.get(SheetsSourceConfig.SHEET_TOKEN_URI),
-                properties.get(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL),
-                properties.get(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL));
+        authorizationCredentials = AuthorizationCredentials.getInstance(properties);
     }
     private void initializeConfigurations(final Map<String, String> properties) {
-        timeTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
         pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
+
         spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
+        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
+            throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
+        }
+
         String sprintsConfig = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
+        if (sprintsConfig == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES), "")) {
+            throw new ConnectException("SheetsConnector configuration must include sprint.names setting");
+        }
+
         sprints = sprintsConfig.split(",");
-        numberTeamMembers = properties.get(SheetsSourceConfig.SHEET_TEAM_NUMBER_MEMBERS);
+
         teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
+        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_TEAM_NAME), "")) {
+            throw new ConnectException("SheetsConnector configuration must include team.name setting");
+        }
+
+        sheetHourTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
+        if (sheetHourTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG), "")) {
+            throw new ConnectException("SheetsConnector configuration must include hours.topic setting");
+        }
+
+
 
     }
     private void setPollConfiguration() {
@@ -101,25 +111,32 @@ public class SheetsSourceTask extends SourceTask {
         return auxMemberValue.split(",")[0];
     }
 
-    private Integer getDeveloperHours(final Object memberValue) {
+    private Boolean hasDecimalNumber(final String cellValues) {
+        return cellValues.split(",").length == 3;
+    }
+    private Double getDeveloperHours(final Object memberValue) {
         String auxMemberValue = memberValue.toString();
         auxMemberValue = auxMemberValue
                 .substring(1, auxMemberValue.length() - 1);
-        auxMemberValue = auxMemberValue.split(",")[1];
-        auxMemberValue = String.valueOf(auxMemberValue.charAt(1));
-        return Integer.parseInt(auxMemberValue);
+        if (Boolean.FALSE.equals(hasDecimalNumber(auxMemberValue))) {
+            auxMemberValue = auxMemberValue.split(",")[1];
+            auxMemberValue = String.valueOf(auxMemberValue.charAt(1));
+        } else {
+            auxMemberValue = auxMemberValue.split(", ")[1];
+            auxMemberValue = auxMemberValue.replace(',', '.');
+        }
+        return Double.parseDouble(auxMemberValue);
     }
     private SourceRecord generateTeamRecords(final String name) throws AuthorizationCredentialsException, IOException {
         TeamInformation teamInformation = getTeamInformation(name);
-        int numberMembers = Integer.parseInt(numberTeamMembers);
-        List<ValueRange> teamValues = SheetsApi.getTeamValues(sprints, numberMembers, spreadSheetId);
-        Map<String, ArrayList<Integer>> memberHours = new HashMap<>();
+        List<ValueRange> teamValues = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
+        Map<String, ArrayList<Double>> memberHours = new HashMap<>();
         for (ValueRange sprintValues : teamValues) {
             for (Object memberValue : sprintValues.getValues()) {
                 String developerName = getDeveloperName(memberValue);
-                Integer developerHours = getDeveloperHours(memberValue);
+                Double developerHours = getDeveloperHours(memberValue);
                 if (memberHours.get(developerName) == null) {
-                    memberHours.put(developerName, new ArrayList<>(developerHours));
+                    memberHours.put(developerName, new ArrayList<>(Collections.singleton(developerHours)));
                 } else {
                     memberHours.get(developerName).add(developerHours);
                 }
@@ -170,21 +187,6 @@ public class SheetsSourceTask extends SourceTask {
         initializeAuthorizationCredentials(properties);
         initializeConfigurations(properties);
         setPollConfiguration();
-        /*
-        Map<String,String> sourcePartition = new HashMap<>();
-        //sourcePartition.put( "githubUrl", githubUrls[0] );
-        if (context != null) {
-            Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
-            if (offset != null ) {
-                try {
-                    lastDataRetreived = dfZULU.parse( (String) offset.get("updated") );
-                    taskLogger.info("--------------------------" + "found offset: updated=" + lastDataRetreived);
-                } catch (ParseException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }*/
     }
 
     @Override
@@ -192,35 +194,33 @@ public class SheetsSourceTask extends SourceTask {
         List <SourceRecord> records = new ArrayList<>();
         String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
                 + " interval:" + pollIntervalConfiguration;
-        taskLogger.log(Level.INFO, "Task Poll {}", messageTaskPollInfo);
-        if(lastPollTime != 0 && lostConnection()) {
-            Thread.sleep(1000);
-            return records;
+        taskLogger.info("Task Poll {}", messageTaskPollInfo);
+        if (lastPollTime != 0) {
+            if (System.currentTimeMillis() < ( lastPollTime + (3600 * 1000))) {
+                Thread.sleep(342433);
+                return records;
+            }
         }
         lastPollTime = System.currentTimeMillis();
         try {
             SourceRecord teamRecord = generateTeamRecords(teamName);
-            System.out.println(teamRecord);
             records.add(teamRecord);
-
+            taskLogger.info("TeamRecord {}", teamRecord);
         } catch (AuthorizationCredentialsException | IOException e) {
             throw new RuntimeException(e);
         }
         taskLogger.info("connect-sheets // TASK: Finished task");
         return records;
-
     }
 
 
     private SourceRecord getSheetSourceRecord(TeamInformation teamInformation) {
-        Map<String, String> sourcePartition = new HashMap<>();
-        sourcePartition.put("id", teamInformation.id.toString());
-        sourcePartition.put("spreadsheet_id", teamInformation.spreadsheetId);
-        Map<String, String> sourceOffset = new HashMap<>();
-        sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
+
+        Map<String,String> m = new HashMap<>();
+        m.put("2", "2");
 
         Struct teamData = new Struct(SheetsSchema.sheetSchema);
-        teamData.put(SheetsSchema.FIELD_ID, teamInformation.id.toString());
+        teamData.put(SheetsSchema.TEAM_ID, teamInformation.id.toString());
         teamData.put(SheetsSchema.FIELD_TEAM_NAME, teamInformation.teamName);
         teamData.put(SheetsSchema.FIELD_SPREADSHEET_ID, spreadSheetId);
         teamData.put(SheetsSchema.FIELD_TIME, teamInformation.time);
@@ -232,21 +232,16 @@ public class SheetsSourceTask extends SourceTask {
             for (TimeInputation timeInputation : developerInfo.timeInputations) {
                 Struct imputation = new Struct(SheetsSchema.imputationSchema);
                 imputation.put(SheetsSchema.FIELD_SPRINT_NAME, timeInputation.sprintName);
-                imputation.put(SheetsSchema.FIELD_DEVELOPER_TIME, String.valueOf(timeInputation.sprintHours));
+                imputation.put(SheetsSchema.FIELD_DEVELOPER_TIME, timeInputation.sprintHours.floatValue());
                 developerImputations.add(imputation);
             }
             developerData.put(SheetsSchema.FIELD_IMPUTATION_TIMES, developerImputations);
             developers.add(developerData);
         }
         teamData.put(SheetsSchema.FIELD_DEVELOPER_INFO, developers);
-        return new SourceRecord(
-                sourcePartition,
-                sourceOffset,
-                timeTopic,
-                Schema.STRING_SCHEMA,
-                teamInformation.id, //uuid as elasticsearch index
-                Schema.STRING_SCHEMA,
-                teamData);
+
+        return new SourceRecord(m, m, sheetHourTopic, SheetsSchema.sheetSchema, teamData);
+
     }
 
     @Override
