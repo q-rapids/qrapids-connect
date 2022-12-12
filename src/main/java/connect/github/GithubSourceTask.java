@@ -525,7 +525,7 @@ public class GithubSourceTask extends SourceTask {
 
         if ( context != null ) {
             Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
-            if (offset != null ) {
+            if (offset != null && offset.containsKey("updated") ) {
                 try {
                     issueMostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
                     log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
