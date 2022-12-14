@@ -129,9 +129,16 @@ public class SheetsSourceTask extends SourceTask {
     }
     private SourceRecord generateTeamRecords(final String name) throws AuthorizationCredentialsException, IOException {
         TeamInformation teamInformation = getTeamInformation(name);
-        List<ValueRange> teamValues = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
+        List<ValueRange> googleSheetsData = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
+
+        Developer[] devs = getDeveloperData(googleSheetsData);
+        teamInformation.developerInfo = devs;
+        return getSheetSourceRecord(teamInformation);
+    }
+
+    private Developer[] getDeveloperData(final List<ValueRange> membersTotalHours) {
         Map<String, ArrayList<Double>> memberHours = new HashMap<>();
-        for (ValueRange sprintValues : teamValues) {
+        for (ValueRange sprintValues : membersTotalHours) {
             for (Object memberValue : sprintValues.getValues()) {
                 String developerName = getDeveloperName(memberValue);
                 Double developerHours = getDeveloperHours(memberValue);
@@ -164,8 +171,7 @@ public class SheetsSourceTask extends SourceTask {
         for (int i = 0; i < teamDevelopers.size(); ++i) {
             devs[i] = teamDevelopers.get(i);
         }
-        teamInformation.developerInfo = devs;
-        return getSheetSourceRecord(teamInformation);
+        return devs;
     }
 
     /**

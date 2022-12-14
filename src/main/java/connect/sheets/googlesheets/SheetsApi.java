@@ -253,12 +253,17 @@ public class SheetsApi {
 
 	private static BatchGetValuesResponse getValueRangesGoogleSheets(final String[] sprintNames,
 																	 final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
-		Sheets service = getSheetsService();
 		List <String> memberHourRanges = generateRangesForMemberTotalHours(sprintNames,
 				getNumberOfMembers(spreadsheetId));
+		return getGoogleSheetsDataForMembers(spreadsheetId, memberHourRanges);
+	}
+
+	private static BatchGetValuesResponse getGoogleSheetsDataForMembers(String spreadsheetId, List<String> memberHourRanges) throws IOException, AuthorizationCredentialsException {
+		Sheets service = getSheetsService();
 		return service.spreadsheets().values().batchGet(spreadsheetId)
 				.setRanges(memberHourRanges).execute();
 	}
+
 	public static List<ValueRange> getMembersTotalHours(final String[] sprintNames,
 														final String spreadsheetId)
 			throws IOException, AuthorizationCredentialsException {
