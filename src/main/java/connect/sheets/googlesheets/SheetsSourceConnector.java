@@ -19,7 +19,7 @@ public class SheetsSourceConnector extends SourceConnector {
 
     private String sprintNames;
 
-    private String sheetHourTopic;
+    private String sheetsImputationTopic;
 
     private String teamName;
 
@@ -32,31 +32,32 @@ public class SheetsSourceConnector extends SourceConnector {
 
     @Override
     public void start(Map<String, String> properties) {
-        pollInterval = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
+        connectorLogger.info("Start method init");
+        pollInterval = properties.get(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG);
 
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
-        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
+        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEETS_ID);
+        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), "")) {
             throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
         }
 
-        sprintNames =  properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
-        if (sprintNames == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES), "")) {
+        sprintNames =  properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES);
+        if (sprintNames == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES), "")) {
             throw new ConnectException("SheetsConnector configuration must include sprint.names setting");
         }
 
-        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
-        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_TEAM_NAME), "")) {
+        teamName = properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME);
+        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), "")) {
             throw new ConnectException("SheetsConnector configuration must include team.name setting");
         }
 
 
-        sheetHourTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
-        if (sheetHourTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG), "")) {
+        sheetsImputationTopic = properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
+        if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), "")) {
             throw new ConnectException("SheetsConnector configuration must include hours.topic setting");
         }
 
         authorizationCredentials = AuthorizationCredentials.getInstance(properties);
-
+        connectorLogger.info("Start method end");
     }
 
 
@@ -67,23 +68,25 @@ public class SheetsSourceConnector extends SourceConnector {
 
     @Override
     public List<Map<String, String>> taskConfigs(int i) {
+        connectorLogger.info("Task configuration init");
         ArrayList<Map<String, String>> configurationList = new ArrayList<>();
         Map<String, String> configuration = new HashMap<>();
-        configuration.put(SheetsSourceConfig.SPREADSHEET_ID, spreadSheetId);
-        configuration.put(SheetsSourceConfig.SHEET_SPRINT_NAMES, sprintNames);
-        configuration.put(SheetsSourceConfig.SHEET_PROJECT_ID, authorizationCredentials.getProject_id());
-        configuration.put(SheetsSourceConfig.SHEET_PRIVATE_KEY_ID, authorizationCredentials.getPrivate_key_id());
-        configuration.put(SheetsSourceConfig.SHEET_PRIVATE_KEY, authorizationCredentials.getPrivate_key());
-        configuration.put(SheetsSourceConfig.SHEET_CLIENT_EMAIL, authorizationCredentials.getClient_email());
-        configuration.put(SheetsSourceConfig.SHEET_CLIENT_ID, authorizationCredentials.getClient_id());
-        configuration.put(SheetsSourceConfig.SHEET_AUTH_URI, authorizationCredentials.getAuth_uri());
-        configuration.put(SheetsSourceConfig.SHEET_TOKEN_URI, authorizationCredentials.getToken_uri());
-        configuration.put(SheetsSourceConfig.SHEET_AUTH_PROVIDER_URL, authorizationCredentials.getAuth_provider_x509_cert_url());
-        configuration.put(SheetsSourceConfig.SHEET_CLIENT_CERTIFICATION_URL, authorizationCredentials.getClient_x509_cert_url());
-        configuration.put(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG, "" + pollInterval);
-        configuration.put(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG, sheetHourTopic);
-        configuration.put(SheetsSourceConfig.SHEET_TEAM_NAME, teamName);
+        configuration.put(SheetsSourceConfig.SPREADSHEETS_ID, spreadSheetId);
+        configuration.put(SheetsSourceConfig.SHEETS_SPRINT_NAMES, sprintNames);
+        configuration.put(SheetsSourceConfig.SHEETS_PROJECT_ID, authorizationCredentials.getProject_id());
+        configuration.put(SheetsSourceConfig.SHEETS_PRIVATE_KEY_ID, authorizationCredentials.getPrivate_key_id());
+        configuration.put(SheetsSourceConfig.SHEETS_PRIVATE_KEY, authorizationCredentials.getPrivate_key());
+        configuration.put(SheetsSourceConfig.SHEETS_CLIENT_EMAIL, authorizationCredentials.getClient_email());
+        configuration.put(SheetsSourceConfig.SHEETS_CLIENT_ID, authorizationCredentials.getClient_id());
+        configuration.put(SheetsSourceConfig.SHEETS_AUTH_URI, authorizationCredentials.getAuth_uri());
+        configuration.put(SheetsSourceConfig.SHEETS_TOKEN_URI, authorizationCredentials.getToken_uri());
+        configuration.put(SheetsSourceConfig.SHEETS_AUTH_PROVIDER_URL, authorizationCredentials.getAuth_provider_x509_cert_url());
+        configuration.put(SheetsSourceConfig.SHEETS_CLIENT_CERTIFICATION_URL, authorizationCredentials.getClient_x509_cert_url());
+        configuration.put(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG, "" + pollInterval);
+        configuration.put(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG, sheetsImputationTopic);
+        configuration.put(SheetsSourceConfig.SHEETS_TEAM_NAME, teamName);
         configurationList.add(configuration);
+        connectorLogger.info("Task configuration end");
         return configurationList;
     }
 

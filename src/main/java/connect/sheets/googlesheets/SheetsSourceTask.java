@@ -4,8 +4,9 @@ package connect.sheets.googlesheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import connect.sheets.AuthorizationCredentials;
 import connect.sheets.exceptions.AuthorizationCredentialsException;
+import jdk.internal.org.objectweb.asm.tree.analysis.Value;
 import model.sheets.Developer;
-import model.sheets.TeamInformation;
+import model.sheets.ImputationInformation;
 import model.sheets.TimeInputation;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +47,7 @@ public class SheetsSourceTask extends SourceTask {
     private String teamName;
 
     private String[] sprints;
-    private String sheetHourTopic;
+    private String sheetsImputationTopic;
 
     private AuthorizationCredentials authorizationCredentials;
     private final Logger taskLogger = LoggerFactory.getLogger(SheetsSourceTask.class.getName());
@@ -55,32 +57,29 @@ public class SheetsSourceTask extends SourceTask {
         authorizationCredentials = AuthorizationCredentials.getInstance(properties);
     }
     private void initializeConfigurations(final Map<String, String> properties) {
-        pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEET_INTERVAL_SECONDS_CONFIG);
+        pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG);
 
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEET_ID);
-        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEET_ID), "")) {
+        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEETS_ID);
+        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), "")) {
             throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
         }
 
-        String sprintsConfig = properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES);
-        if (sprintsConfig == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_SPRINT_NAMES), "")) {
+        String sprintsConfig = properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES);
+        if (sprintsConfig == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES), "")) {
             throw new ConnectException("SheetsConnector configuration must include sprint.names setting");
         }
 
         sprints = sprintsConfig.split(",");
 
-        teamName = properties.get(SheetsSourceConfig.SHEET_TEAM_NAME);
-        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_TEAM_NAME), "")) {
+        teamName = properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME);
+        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), "")) {
             throw new ConnectException("SheetsConnector configuration must include team.name setting");
         }
 
-        sheetHourTopic = properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG);
-        if (sheetHourTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEET_HOUR_TOPIC_CONFIG), "")) {
-            throw new ConnectException("SheetsConnector configuration must include hours.topic setting");
+        sheetsImputationTopic = properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
+        if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), "")) {
+            throw new ConnectException("SheetsConnector configuration must include imputations.topic setting");
         }
-
-
-
     }
     private void setPollConfiguration() {
         lastPollTime = 0L;
@@ -95,14 +94,7 @@ public class SheetsSourceTask extends SourceTask {
         return System.currentTimeMillis() < (lastPollTime + (1000));
     }
 
-    private TeamInformation getTeamInformation(final String name) {
-        TeamInformation teamInformation = new TeamInformation();
-        teamInformation.id = UUID.randomUUID();
-        teamInformation.teamName = name;
-        teamInformation.spreadsheetId = spreadSheetId;
-        teamInformation.time = String.valueOf(System.currentTimeMillis());
-        return teamInformation;
-    }
+
 
     private String getDeveloperName(final Object memberValue) {
         String auxMemberValue = memberValue.toString();
@@ -127,52 +119,43 @@ public class SheetsSourceTask extends SourceTask {
         }
         return Double.parseDouble(auxMemberValue);
     }
-    private SourceRecord generateTeamRecords(final String name) throws AuthorizationCredentialsException, IOException {
-        TeamInformation teamInformation = getTeamInformation(name);
+
+    private ImputationInformation generateImputationInformation(final String sprintName,
+                                                                final List<Object> information) {
+        return new ImputationInformation(UUID.randomUUID().toString())
+                .teamName(teamName)
+                .spreadsheetId(spreadSheetId)
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .sprintName(sprintName)
+                .developerName((String) information.get(0))
+                .totalHours((String) information.get(1))
+                .reHours((String) information.get(2))
+                .rfHours((String) information.get(3))
+                .cpHours((String) information.get(4))
+                .fHours((String) information.get(5))
+                .desHours((String) information.get(6))
+                .gpHours((String) information.get(7))
+                .docHours((String) information.get(8))
+                .presHours((String) information.get(9));
+    }
+    private List<ImputationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
+        ArrayList<ImputationInformation> imputationInformations = new ArrayList<>();
+        for (int i = 0; i < googleSheetsData.size(); i += 2) {
+            String sprintName = String.valueOf(googleSheetsData.get(i).getValues().get(0))
+                    .substring(1, googleSheetsData.get(i).getValues().get(0).toString().length() - 1);
+            ValueRange sprintInformationRange = googleSheetsData.get(i + 1);
+            for (List<Object> memberIterationInformation : sprintInformationRange.getValues()) {
+                imputationInformations.add(generateImputationInformation(sprintName, memberIterationInformation));
+            }
+        }
+        return imputationInformations;
+    }
+    private List<ImputationInformation> getTimeImputations() throws AuthorizationCredentialsException, IOException {
         List<ValueRange> googleSheetsData = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
+        return generateImputationInformations(googleSheetsData);
 
-        Developer[] devs = getDeveloperData(googleSheetsData);
-        teamInformation.developerInfo = devs;
-        return getSheetSourceRecord(teamInformation);
     }
 
-    private Developer[] getDeveloperData(final List<ValueRange> membersTotalHours) {
-        Map<String, ArrayList<Double>> memberHours = new HashMap<>();
-        for (ValueRange sprintValues : membersTotalHours) {
-            for (Object memberValue : sprintValues.getValues()) {
-                String developerName = getDeveloperName(memberValue);
-                Double developerHours = getDeveloperHours(memberValue);
-                if (memberHours.get(developerName) == null) {
-                    memberHours.put(developerName, new ArrayList<>(Collections.singleton(developerHours)));
-                } else {
-                    memberHours.get(developerName).add(developerHours);
-                }
-            }
-        }
-        ArrayList<Developer> teamDevelopers = new ArrayList<>();
-        for (String devName : memberHours.keySet()) {
-            Developer dev = new Developer();
-            dev.developerName = devName;
-            ArrayList<TimeInputation> developerTimeInputations = new ArrayList<>();
-            for (int i = 0; i < memberHours.get(devName).size(); ++i) {
-                TimeInputation developerSprintTimeInputation = new TimeInputation();
-                developerSprintTimeInputation.sprintName = sprints[i];
-                developerSprintTimeInputation.sprintHours = (double) memberHours.get(devName).get(i);
-                developerTimeInputations.add(developerSprintTimeInputation);
-            }
-            TimeInputation[] times = new TimeInputation[developerTimeInputations.size()];
-            for (int i = 0; i < developerTimeInputations.size(); ++i) {
-                times[i] = developerTimeInputations.get(i);
-            }
-            dev.timeInputations = times;
-            teamDevelopers.add(dev);
-        }
-        Developer[] devs = new Developer[teamDevelopers.size()];
-        for (int i = 0; i < teamDevelopers.size(); ++i) {
-            devs[i] = teamDevelopers.get(i);
-        }
-        return devs;
-    }
 
     /**
      * Version getter
@@ -209,44 +192,42 @@ public class SheetsSourceTask extends SourceTask {
         }
         lastPollTime = System.currentTimeMillis();
         try {
-            SourceRecord teamRecord = generateTeamRecords(teamName);
-            records.add(teamRecord);
-            taskLogger.info("TeamRecord {}", teamRecord);
+
+            records = getTimeImputations()
+                    .stream()
+                    .parallel()
+                    .map(this::getSheetSourceRecord)
+                    .collect(Collectors.toList());
         } catch (AuthorizationCredentialsException | IOException e) {
             throw new RuntimeException(e);
         }
+        taskLogger.info("Records: {}", records);
         taskLogger.info("connect-sheets // TASK: Finished task");
         return records;
     }
 
 
-    private SourceRecord getSheetSourceRecord(TeamInformation teamInformation) {
+    private SourceRecord getSheetSourceRecord(ImputationInformation imputationInformation) {
 
         Map<String,String> m = new HashMap<>();
         m.put("2", "2");
-
-        Struct teamData = new Struct(SheetsSchema.sheetSchema);
-        teamData.put(SheetsSchema.TEAM_ID, teamInformation.id.toString());
-        teamData.put(SheetsSchema.FIELD_TEAM_NAME, teamInformation.teamName);
-        teamData.put(SheetsSchema.FIELD_SPREADSHEET_ID, spreadSheetId);
-        teamData.put(SheetsSchema.FIELD_TIME, teamInformation.time);
-        Vector<Struct> developers = new Vector<>();
-        for (Developer developerInfo : teamInformation.developerInfo) {
-            Struct developerData = new Struct(SheetsSchema.developer);
-            developerData.put(SheetsSchema.FIELD_DEVELOPER_NAME, developerInfo.developerName);
-            Vector<Struct> developerImputations = new Vector<>();
-            for (TimeInputation timeInputation : developerInfo.timeInputations) {
-                Struct imputation = new Struct(SheetsSchema.imputationSchema);
-                imputation.put(SheetsSchema.FIELD_SPRINT_NAME, timeInputation.sprintName);
-                imputation.put(SheetsSchema.FIELD_DEVELOPER_TIME, timeInputation.sprintHours.floatValue());
-                developerImputations.add(imputation);
-            }
-            developerData.put(SheetsSchema.FIELD_IMPUTATION_TIMES, developerImputations);
-            developers.add(developerData);
-        }
-        teamData.put(SheetsSchema.FIELD_DEVELOPER_INFO, developers);
-
-        return new SourceRecord(m, m, sheetHourTopic, SheetsSchema.sheetSchema, teamData);
+        Struct imputationSchema = new Struct(SheetsSchema.sheetsInputationSchema);
+        imputationSchema.put(SheetsSchema.TEAM_ID, imputationInformation.id());
+        imputationSchema.put(SheetsSchema.TEAM_NAME, imputationInformation.teamName());
+        imputationSchema.put(SheetsSchema.SPREADSHEET_ID, imputationInformation.spreadsheetId());
+        imputationSchema.put(SheetsSchema.TIMESTAMP, imputationInformation.timestamp());
+        imputationSchema.put(SheetsSchema.DEVELOPER_NAME, imputationInformation.developerName());
+        imputationSchema.put(SheetsSchema.SPRINT_NAME, imputationInformation.sprintName());
+        imputationSchema.put(SheetsSchema.TOTAL_HOURS, imputationInformation.totalHours());
+        imputationSchema.put(SheetsSchema.RE_HOURS, imputationInformation.reHours());
+        imputationSchema.put(SheetsSchema.RF_HOURS, imputationInformation.rfHours());
+        imputationSchema.put(SheetsSchema.CP_HOURS, imputationInformation.cpHours());
+        imputationSchema.put(SheetsSchema.F_HOURS, imputationInformation.fHours());
+        imputationSchema.put(SheetsSchema.DES_HOURS, imputationInformation.desHours());
+        imputationSchema.put(SheetsSchema.GP_HOURS, imputationInformation.gpHours());
+        imputationSchema.put(SheetsSchema.DOC_HOURS, imputationInformation.docHours());
+        imputationSchema.put(SheetsSchema.PRES_HOURS, imputationInformation.presHours());
+        return new SourceRecord(m, m, sheetsImputationTopic, SheetsSchema.sheetsInputationSchema, imputationSchema);
 
     }
 

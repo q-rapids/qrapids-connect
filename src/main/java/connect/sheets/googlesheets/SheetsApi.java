@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 
 public class SheetsApi {
@@ -219,46 +220,52 @@ public class SheetsApi {
 		return "anonymous";
 	}
 
-	private static List<String> generateRangesForMemberTotalHours(final String[] sprintNames, final Integer numberMembers) {
-
+	private static List<String> generateRangesForMembers(final String[] sprintNames,
+														 final Integer memberQuantity,
+														 final Integer	activityQuantity) {
+		char finalActivityColumn = (char) ('O' + activityQuantity);
 		ArrayList<String> rangeSet = new ArrayList<>();
 		for (String sprint : sprintNames) {
-			StringBuilder range = new StringBuilder();
-			range.append(sprint)
-					.append("!")
-					.append("I8:")
-					.append("J")
-					.append(8 + (numberMembers - 1));
-			rangeSet.add(range.toString());
+			String sprintNameRange = sprint + "!C7";
+			rangeSet.add(sprintNameRange);
+			String sprintTimesRange = sprint +
+					"!" +
+					"N8:" +
+					finalActivityColumn +
+					(8 + (memberQuantity - 1));
+			rangeSet.add(sprintTimesRange);
 		}
 		return rangeSet;
 	}
-	private static Integer getNumberOfMembers(final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
+	private static List<ValueRange> getQuantities(final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
 		Sheets service = getSheetsService();
 		ArrayList<String> rangeSet = new ArrayList<>();
-		StringBuilder range = new StringBuilder().append("Panell de control!U4");
-		rangeSet.add(range.toString());
+		String quantityMembersRange = "Panell de control!U4";
+		rangeSet.add(quantityMembersRange);
+		String quantityActivitiesRange = "Panell de control!Y4";
+		rangeSet.add(quantityActivitiesRange);
 		BatchGetValuesResponse batchGetValuesResponse = service.spreadsheets().values().batchGet(spreadsheetId)
 				.setRanges(rangeSet).execute();
-		List<ValueRange> numberOfMembersValueRanges = batchGetValuesResponse.getValueRanges();
-		for (ValueRange valueNumberMembers : numberOfMembersValueRanges) {
-			for (Object numberMembersObject : valueNumberMembers.getValues()) {
-				String numberAux = numberMembersObject.toString()
-						.substring(1,numberMembersObject.toString().length() - 1);
-				return Integer.valueOf(numberAux);
-			}
-		}
-		return 0;
+		return batchGetValuesResponse.getValueRanges();
+	}
+
+	private static Integer valueRangeToNumber(final ValueRange valueRange) {
+		return Integer.valueOf(valueRange.getValues().toString()
+				.substring(2, valueRange.getValues().toString().length() - 2));
 	}
 
 	private static BatchGetValuesResponse getValueRangesGoogleSheets(final String[] sprintNames,
 																	 final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
-		List <String> memberHourRanges = generateRangesForMemberTotalHours(sprintNames,
-				getNumberOfMembers(spreadsheetId));
+		List<Integer> quantities = getQuantities(spreadsheetId)
+				.stream()
+				.map(SheetsApi::valueRangeToNumber)
+				.collect(Collectors.toList());
+		List <String> memberHourRanges = generateRangesForMembers(sprintNames, quantities.get(0), quantities.get(1));
 		return getGoogleSheetsDataForMembers(spreadsheetId, memberHourRanges);
 	}
 
-	private static BatchGetValuesResponse getGoogleSheetsDataForMembers(String spreadsheetId, List<String> memberHourRanges) throws IOException, AuthorizationCredentialsException {
+	private static BatchGetValuesResponse getGoogleSheetsDataForMembers(String spreadsheetId, List<String> memberHourRanges)
+			throws IOException, AuthorizationCredentialsException {
 		Sheets service = getSheetsService();
 		return service.spreadsheets().values().batchGet(spreadsheetId)
 				.setRanges(memberHourRanges).execute();
@@ -285,7 +292,6 @@ public class SheetsApi {
 		} else {
 			return Collections.emptyList();
 		}
-
 	}
 }
 

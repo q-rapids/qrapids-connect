@@ -15,17 +15,17 @@ import java.util.logging.Logger;
  */
 public class Driver {
     public static void main(String[] args) throws InterruptedException {
-
         Logger driverLogger = Logger.getLogger(Driver.class.getName());
         Map<String, String> config = PropertyFile.get("./config/connect-sheets.properties");
         SheetsSourceTask sheetsSourceTask = new SheetsSourceTask();
         sheetsSourceTask.start(config);
         while (true) {
             List<SourceRecord> records = sheetsSourceTask.poll();
+            /*
             for (SourceRecord sr : records) {
                 String sourceRecordResult = sr.toString();
                 driverLogger.log(Level.INFO, "Result: {}", sourceRecordResult);
-            }
+            }*/
         }
     }
 }
