@@ -19,7 +19,7 @@ public class SheetsSchema {
 	public static final String TEAM_ID = "team_id";
 	public static final String TEAM_NAME = "team_name";
 	public static final String SPREADSHEET_ID = "spreadsheet_id";
-	public static final String TIMESTAMP = "timestamp";
+	public static final String TIMESTAMP = "date";
 	public static final String DEVELOPER_NAME = "developer_name";
 	public static final String SPRINT_NAME ="sprint_name";
 	public static final String TOTAL_HOURS = "total_hours";
@@ -42,14 +42,14 @@ public class SheetsSchema {
 			.field(TIMESTAMP, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(DEVELOPER_NAME, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(SPRINT_NAME, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(TOTAL_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(RE_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(RF_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(CP_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(F_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(DES_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(GP_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(DOC_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
-			.field(PRES_HOURS, Schema.OPTIONAL_STRING_SCHEMA)
+			.field(TOTAL_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(RE_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(RF_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(CP_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(F_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(DES_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(GP_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(DOC_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(PRES_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
 			.build();
 }

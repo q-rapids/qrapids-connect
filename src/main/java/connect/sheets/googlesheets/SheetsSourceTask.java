@@ -4,10 +4,9 @@ package connect.sheets.googlesheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import connect.sheets.AuthorizationCredentials;
 import connect.sheets.exceptions.AuthorizationCredentialsException;
-import jdk.internal.org.objectweb.asm.tree.analysis.Value;
-import model.sheets.Developer;
+import connect.sonarqube.SonarqubeSourceConfig;
 import model.sheets.ImputationInformation;
-import model.sheets.TimeInputation;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -16,8 +15,16 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +45,7 @@ public class SheetsSourceTask extends SourceTask {
 
     private Integer pollInterval;
 
-    private Long lastPollTime;
-
-    private Date lastDataRetreived;
+    private Long lastPollTime = 0L;
 
     private String spreadSheetId;
 
@@ -48,6 +53,8 @@ public class SheetsSourceTask extends SourceTask {
 
     private String[] sprints;
     private String sheetsImputationTopic;
+
+    private String teamId;
 
     private AuthorizationCredentials authorizationCredentials;
     private final Logger taskLogger = LoggerFactory.getLogger(SheetsSourceTask.class.getName());
@@ -57,8 +64,6 @@ public class SheetsSourceTask extends SourceTask {
         authorizationCredentials = AuthorizationCredentials.getInstance(properties);
     }
     private void initializeConfigurations(final Map<String, String> properties) {
-        pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG);
-
         spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEETS_ID);
         if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), "")) {
             throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
@@ -80,21 +85,19 @@ public class SheetsSourceTask extends SourceTask {
         if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), "")) {
             throw new ConnectException("SheetsConnector configuration must include imputations.topic setting");
         }
+
+        pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG);
+
+        teamId = UUID.randomUUID().toString();
     }
     private void setPollConfiguration() {
-        lastPollTime = 0L;
+
         if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) {
             pollInterval = 3600;
         } else{
             pollInterval = Integer.parseInt(pollIntervalConfiguration);
         }
     }
-
-    private boolean lostConnection() {
-        return System.currentTimeMillis() < (lastPollTime + (1000));
-    }
-
-
 
     private String getDeveloperName(final Object memberValue) {
         String auxMemberValue = memberValue.toString();
@@ -122,21 +125,24 @@ public class SheetsSourceTask extends SourceTask {
 
     private ImputationInformation generateImputationInformation(final String sprintName,
                                                                 final List<Object> information) {
-        return new ImputationInformation(UUID.randomUUID().toString())
+        Date in = new Date();
+        LocalDateTime today = LocalDateTime.ofInstant(in.toInstant(), ZoneId.systemDefault());
+        Date todayDate = Date.from(today.atZone(ZoneId.systemDefault()).toInstant());
+        return new ImputationInformation(teamId)
                 .teamName(teamName)
                 .spreadsheetId(spreadSheetId)
-                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .timestamp(dfZULU.format(todayDate))
                 .sprintName(sprintName)
                 .developerName((String) information.get(0))
-                .totalHours((String) information.get(1))
-                .reHours((String) information.get(2))
-                .rfHours((String) information.get(3))
-                .cpHours((String) information.get(4))
-                .fHours((String) information.get(5))
-                .desHours((String) information.get(6))
-                .gpHours((String) information.get(7))
-                .docHours((String) information.get(8))
-                .presHours((String) information.get(9));
+                .totalHours(Double.parseDouble(information.get(1).toString()))
+                .reHours(Double.parseDouble(information.get(2).toString()))
+                .rfHours(Double.parseDouble(information.get(3).toString()))
+                .cpHours(Double.parseDouble(information.get(4).toString()))
+                .fHours(Double.parseDouble(information.get(5).toString()))
+                .desHours(Double.parseDouble(information.get(6).toString()))
+                .gpHours(Double.parseDouble(information.get(7).toString()))
+                .docHours(Double.parseDouble(information.get(8).toString()))
+                .presHours(Double.parseDouble(information.get(9).toString()));
     }
     private List<ImputationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
         ArrayList<ImputationInformation> imputationInformations = new ArrayList<>();
@@ -182,11 +188,11 @@ public class SheetsSourceTask extends SourceTask {
     public List<SourceRecord> poll() throws InterruptedException {
         List <SourceRecord> records = new ArrayList<>();
         String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
-                + " interval:" + pollIntervalConfiguration;
+                + " interval:" + pollInterval;
         taskLogger.info("Task Poll {}", messageTaskPollInfo);
         if (lastPollTime != 0) {
-            if (System.currentTimeMillis() < ( lastPollTime + (3600 * 1000))) {
-                Thread.sleep(342433);
+            if (System.currentTimeMillis() < ( lastPollTime + (pollInterval * 1000))) {
+                Thread.sleep(1000);
                 return records;
             }
         }
@@ -209,8 +215,12 @@ public class SheetsSourceTask extends SourceTask {
 
     private SourceRecord getSheetSourceRecord(ImputationInformation imputationInformation) {
 
-        Map<String,String> m = new HashMap<>();
-        m.put("2", "2");
+        Map<String,String> sourcePartition = new HashMap<>();
+        sourcePartition.put("spreadsheetId", imputationInformation.spreadsheetId());
+
+        Map<String,String> sourceOffset = new HashMap<>();
+        sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
+
         Struct imputationSchema = new Struct(SheetsSchema.sheetsInputationSchema);
         imputationSchema.put(SheetsSchema.TEAM_ID, imputationInformation.id());
         imputationSchema.put(SheetsSchema.TEAM_NAME, imputationInformation.teamName());
@@ -227,7 +237,14 @@ public class SheetsSourceTask extends SourceTask {
         imputationSchema.put(SheetsSchema.GP_HOURS, imputationInformation.gpHours());
         imputationSchema.put(SheetsSchema.DOC_HOURS, imputationInformation.docHours());
         imputationSchema.put(SheetsSchema.PRES_HOURS, imputationInformation.presHours());
-        return new SourceRecord(m, m, sheetsImputationTopic, SheetsSchema.sheetsInputationSchema, imputationSchema);
+
+        return new SourceRecord(sourcePartition,
+                sourceOffset,
+                sheetsImputationTopic,
+                Schema.STRING_SCHEMA,
+                imputationInformation.developerName(),
+                SheetsSchema.sheetsInputationSchema,
+                imputationSchema);
 
     }
 

@@ -20,21 +20,21 @@ public class ImputationInformation {
 
     private String sprintName;
 
-    private String totalHours;
+    private Double totalHours;
 
-    private String reHours;
+    private Double reHours;
 
-    private String rfHours;
+    private Double rfHours;
 
-    private String cpHours;
+    private Double cpHours;
 
-    private String fHours;
+    private Double fHours;
 
-    private String desHours;
+    private Double desHours;
 
-    private String gpHours;
+    private Double gpHours;
 
-    private String docHours;
+    private Double docHours;
 
-    private String presHours;
+    private Double presHours;
 }
