@@ -128,21 +128,30 @@ public class SheetsSourceTask extends SourceTask {
         Date in = new Date();
         LocalDateTime today = LocalDateTime.ofInstant(in.toInstant(), ZoneId.systemDefault());
         Date todayDate = Date.from(today.atZone(ZoneId.systemDefault()).toInstant());
+        Double tth = information.get(1).toString().contains(",") ? Double.parseDouble(information.get(1).toString().replace(",", ".")) : Double.parseDouble(information.get(1).toString());
+        Double reh = information.get(2).toString().contains(",") ? Double.parseDouble(information.get(2).toString().replace(",", ".")) : Double.parseDouble(information.get(2).toString());
+        Double rfh = information.get(3).toString().contains(",") ? Double.parseDouble(information.get(3).toString().replace(",", ".")) : Double.parseDouble(information.get(3).toString());
+        Double cph = information.get(4).toString().contains(",") ? Double.parseDouble(information.get(4).toString().replace(",", ".")) : Double.parseDouble(information.get(4).toString());
+        Double fh = information.get(5).toString().contains(",") ? Double.parseDouble(information.get(5).toString().replace(",", ".")) : Double.parseDouble(information.get(5).toString());
+        Double doh = information.get(6).toString().contains(",") ? Double.parseDouble(information.get(6).toString().replace(",", ".")) : Double.parseDouble(information.get(6).toString());
+        Double gph = information.get(7).toString().contains(",") ? Double.parseDouble(information.get(7).toString().replace(",", ".")) : Double.parseDouble(information.get(7).toString());
+        Double dh = information.get(8).toString().contains(",") ? Double.parseDouble(information.get(8).toString().replace(",", ".")) : Double.parseDouble(information.get(8).toString());
+        Double ph = information.get(9).toString().contains(",") ? Double.parseDouble(information.get(9).toString().replace(",", ".")) : Double.parseDouble(information.get(9).toString());
         return new ImputationInformation(teamId)
                 .teamName(teamName)
                 .spreadsheetId(spreadSheetId)
                 .timestamp(dfZULU.format(todayDate))
                 .sprintName(sprintName)
                 .developerName((String) information.get(0))
-                .totalHours(Double.parseDouble(information.get(1).toString()))
-                .reHours(Double.parseDouble(information.get(2).toString()))
-                .rfHours(Double.parseDouble(information.get(3).toString()))
-                .cpHours(Double.parseDouble(information.get(4).toString()))
-                .fHours(Double.parseDouble(information.get(5).toString()))
-                .desHours(Double.parseDouble(information.get(6).toString()))
-                .gpHours(Double.parseDouble(information.get(7).toString()))
-                .docHours(Double.parseDouble(information.get(8).toString()))
-                .presHours(Double.parseDouble(information.get(9).toString()));
+                .totalHours(tth)
+                .reHours(reh)
+                .rfHours(rfh)
+                .cpHours(cph)
+                .fHours(fh)
+                .desHours(dh)
+                .gpHours(gph)
+                .docHours(doh)
+                .presHours(ph);
     }
     private List<ImputationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
         ArrayList<ImputationInformation> imputationInformations = new ArrayList<>();
