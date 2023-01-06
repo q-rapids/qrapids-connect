@@ -85,8 +85,8 @@ public class SheetsApi {
 
 	private static Sheets getSheetsService() throws AuthorizationCredentialsException, IOException {
 		if (sheetsService == null) {
-			String jsonCredentials = getJson(AuthorizationCredentials.getInstance());
-			return createSheetsApiClient(jsonCredentials);
+			GoogleCredentials credentials = getGoogleCredentials(AuthorizationCredentials.getInstance());
+			return createSheetsApiClient(credentials);
 		} else {
 			return sheetsService;
 		}
@@ -98,12 +98,15 @@ public class SheetsApi {
 	 * @return	Json containing the authorization credentials
 	 * @throws AuthorizationCredentialsException	If no authorization credentials are given
 	 */
-	private static String getJson(final AuthorizationCredentials authorizationCredentials) throws AuthorizationCredentialsException {
+	private static GoogleCredentials getGoogleCredentials(final AuthorizationCredentials authorizationCredentials)
+			throws AuthorizationCredentialsException, IOException {
 		if(authorizationCredentials != null) {
 			Gson gsonCredentials = new GsonBuilder()
 					.excludeFieldsWithoutExposeAnnotation()
 					.create();
-			return gsonCredentials.toJson(authorizationCredentials);
+			String jsonCreds = gsonCredentials.toJson(authorizationCredentials);
+			return GoogleCredentials.fromStream(new ByteArrayInputStream(jsonCreds.getBytes()))
+					.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
 		} else {
 			throw new AuthorizationCredentialsException("No authorization credentials detected");
 		}
@@ -111,13 +114,11 @@ public class SheetsApi {
 
 	/**
 	 * Create the sheets API client
-	 * @param credentials
+	 * @param googleCredentials
 	 * @return sheets api client
 	 * @throws IOException
 	 */
-	private static Sheets createSheetsApiClient(String credentials) throws IOException {
-		GoogleCredentials googleCredentials = GoogleCredentials.fromStream(new ByteArrayInputStream(credentials.getBytes()))
-				.createScoped(Collections.singleton(SheetsScopes.SPREADSHEETS));
+	private static Sheets createSheetsApiClient(GoogleCredentials googleCredentials) throws IOException {
 		HttpRequestInitializer requestInitializer = new HttpCredentialsAdapter(googleCredentials);
 		return new Sheets.Builder(new NetHttpTransport(),
 				GsonFactory.getDefaultInstance(),
@@ -220,9 +221,9 @@ public class SheetsApi {
 		return "anonymous";
 	}
 
-	private static List<String> generateRangesForMembers(final String[] sprintNames,
-														 final Integer memberQuantity,
-														 final Integer	activityQuantity) {
+	private static List<String> generateA1RangesForMembers(final String[] sprintNames,
+														   final Integer memberQuantity,
+														   final Integer activityQuantity) {
 		char finalActivityColumn = (char) ('O' + activityQuantity);
 		ArrayList<String> rangeSet = new ArrayList<>();
 		for (String sprint : sprintNames) {
@@ -254,13 +255,13 @@ public class SheetsApi {
 				.substring(2, valueRange.getValues().toString().length() - 2));
 	}
 
-	private static BatchGetValuesResponse getValueRangesGoogleSheets(final String[] sprintNames,
-																	 final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
+	private static BatchGetValuesResponse getDataGoogleSheets(final String[] sprintNames,
+															  final String spreadsheetId) throws AuthorizationCredentialsException, IOException {
 		List<Integer> quantities = getQuantities(spreadsheetId)
 				.stream()
 				.map(SheetsApi::valueRangeToNumber)
 				.collect(Collectors.toList());
-		List <String> memberHourRanges = generateRangesForMembers(sprintNames, quantities.get(0), quantities.get(1));
+		List <String> memberHourRanges = generateA1RangesForMembers(sprintNames, quantities.get(0), quantities.get(1));
 		return getGoogleSheetsDataForMembers(spreadsheetId, memberHourRanges);
 	}
 
@@ -277,7 +278,7 @@ public class SheetsApi {
 		BatchGetValuesResponse result = null;
 		try {
 			// Gets the values of the cells in the specified range.
-			result = getValueRangesGoogleSheets(sprintNames, spreadsheetId);
+			result = getDataGoogleSheets(sprintNames, spreadsheetId);
 			sheetLogger.log(Level.INFO, "Retrieved {} member hours ranges", result.getValueRanges().size());
 		} catch (GoogleJsonResponseException e) {
 			GoogleJsonError error = e.getDetails();

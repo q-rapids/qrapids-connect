@@ -3,11 +3,9 @@ package model.sheets;
 import lombok.*;
 import lombok.experimental.Accessors;
 
-import java.util.UUID;
-
 @RequiredArgsConstructor
 @Accessors(fluent = true) @Getter @Setter
-public class ImputationInformation {
+public class IterationInformation {
     private @NonNull String id;
 
     private String teamName;

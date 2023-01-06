@@ -4,8 +4,7 @@ package connect.sheets.googlesheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import connect.sheets.AuthorizationCredentials;
 import connect.sheets.exceptions.AuthorizationCredentialsException;
-import connect.sonarqube.SonarqubeSourceConfig;
-import model.sheets.ImputationInformation;
+import model.sheets.IterationInformation;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -15,14 +14,11 @@ import org.apache.kafka.connect.source.SourceTask;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
+
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
+
 import java.util.*;
 import java.util.stream.Collectors;
-import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 
 
@@ -123,8 +119,8 @@ public class SheetsSourceTask extends SourceTask {
         return Double.parseDouble(auxMemberValue);
     }
 
-    private ImputationInformation generateImputationInformation(final String sprintName,
-                                                                final List<Object> information) {
+    private IterationInformation generateImputationInformation(final String sprintName,
+                                                               final List<Object> information) {
         Date in = new Date();
         LocalDateTime today = LocalDateTime.ofInstant(in.toInstant(), ZoneId.systemDefault());
         Date todayDate = Date.from(today.atZone(ZoneId.systemDefault()).toInstant());
@@ -137,7 +133,7 @@ public class SheetsSourceTask extends SourceTask {
         Double gph = information.get(7).toString().contains(",") ? Double.parseDouble(information.get(7).toString().replace(",", ".")) : Double.parseDouble(information.get(7).toString());
         Double dh = information.get(8).toString().contains(",") ? Double.parseDouble(information.get(8).toString().replace(",", ".")) : Double.parseDouble(information.get(8).toString());
         Double ph = information.get(9).toString().contains(",") ? Double.parseDouble(information.get(9).toString().replace(",", ".")) : Double.parseDouble(information.get(9).toString());
-        return new ImputationInformation(teamId)
+        return new IterationInformation(teamId)
                 .teamName(teamName)
                 .spreadsheetId(spreadSheetId)
                 .timestamp(dfZULU.format(todayDate))
@@ -153,19 +149,19 @@ public class SheetsSourceTask extends SourceTask {
                 .docHours(doh)
                 .presHours(ph);
     }
-    private List<ImputationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
-        ArrayList<ImputationInformation> imputationInformations = new ArrayList<>();
+    private List<IterationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
+        ArrayList<IterationInformation> iterationInformations = new ArrayList<>();
         for (int i = 0; i < googleSheetsData.size(); i += 2) {
             String sprintName = String.valueOf(googleSheetsData.get(i).getValues().get(0))
                     .substring(1, googleSheetsData.get(i).getValues().get(0).toString().length() - 1);
             ValueRange sprintInformationRange = googleSheetsData.get(i + 1);
             for (List<Object> memberIterationInformation : sprintInformationRange.getValues()) {
-                imputationInformations.add(generateImputationInformation(sprintName, memberIterationInformation));
+                iterationInformations.add(generateImputationInformation(sprintName, memberIterationInformation));
             }
         }
-        return imputationInformations;
+        return iterationInformations;
     }
-    private List<ImputationInformation> getTimeImputations() throws AuthorizationCredentialsException, IOException {
+    private List<IterationInformation> getTimeImputations() throws AuthorizationCredentialsException, IOException {
         List<ValueRange> googleSheetsData = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
         return generateImputationInformations(googleSheetsData);
 
@@ -222,36 +218,36 @@ public class SheetsSourceTask extends SourceTask {
     }
 
 
-    private SourceRecord getSheetSourceRecord(ImputationInformation imputationInformation) {
+    private SourceRecord getSheetSourceRecord(IterationInformation iterationInformation) {
 
         Map<String,String> sourcePartition = new HashMap<>();
-        sourcePartition.put("spreadsheetId", imputationInformation.spreadsheetId());
+        sourcePartition.put("spreadsheetId", iterationInformation.spreadsheetId());
 
         Map<String,String> sourceOffset = new HashMap<>();
         sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
 
         Struct imputationSchema = new Struct(SheetsSchema.sheetsInputationSchema);
-        imputationSchema.put(SheetsSchema.TEAM_ID, imputationInformation.id());
-        imputationSchema.put(SheetsSchema.TEAM_NAME, imputationInformation.teamName());
-        imputationSchema.put(SheetsSchema.SPREADSHEET_ID, imputationInformation.spreadsheetId());
-        imputationSchema.put(SheetsSchema.TIMESTAMP, imputationInformation.timestamp());
-        imputationSchema.put(SheetsSchema.DEVELOPER_NAME, imputationInformation.developerName());
-        imputationSchema.put(SheetsSchema.SPRINT_NAME, imputationInformation.sprintName());
-        imputationSchema.put(SheetsSchema.TOTAL_HOURS, imputationInformation.totalHours());
-        imputationSchema.put(SheetsSchema.RE_HOURS, imputationInformation.reHours());
-        imputationSchema.put(SheetsSchema.RF_HOURS, imputationInformation.rfHours());
-        imputationSchema.put(SheetsSchema.CP_HOURS, imputationInformation.cpHours());
-        imputationSchema.put(SheetsSchema.F_HOURS, imputationInformation.fHours());
-        imputationSchema.put(SheetsSchema.DES_HOURS, imputationInformation.desHours());
-        imputationSchema.put(SheetsSchema.GP_HOURS, imputationInformation.gpHours());
-        imputationSchema.put(SheetsSchema.DOC_HOURS, imputationInformation.docHours());
-        imputationSchema.put(SheetsSchema.PRES_HOURS, imputationInformation.presHours());
+        imputationSchema.put(SheetsSchema.TEAM_ID, iterationInformation.id());
+        imputationSchema.put(SheetsSchema.TEAM_NAME, iterationInformation.teamName());
+        imputationSchema.put(SheetsSchema.SPREADSHEET_ID, iterationInformation.spreadsheetId());
+        imputationSchema.put(SheetsSchema.TIMESTAMP, iterationInformation.timestamp());
+        imputationSchema.put(SheetsSchema.DEVELOPER_NAME, iterationInformation.developerName());
+        imputationSchema.put(SheetsSchema.SPRINT_NAME, iterationInformation.sprintName());
+        imputationSchema.put(SheetsSchema.TOTAL_HOURS, iterationInformation.totalHours());
+        imputationSchema.put(SheetsSchema.RE_HOURS, iterationInformation.reHours());
+        imputationSchema.put(SheetsSchema.RF_HOURS, iterationInformation.rfHours());
+        imputationSchema.put(SheetsSchema.CP_HOURS, iterationInformation.cpHours());
+        imputationSchema.put(SheetsSchema.F_HOURS, iterationInformation.fHours());
+        imputationSchema.put(SheetsSchema.DES_HOURS, iterationInformation.desHours());
+        imputationSchema.put(SheetsSchema.GP_HOURS, iterationInformation.gpHours());
+        imputationSchema.put(SheetsSchema.DOC_HOURS, iterationInformation.docHours());
+        imputationSchema.put(SheetsSchema.PRES_HOURS, iterationInformation.presHours());
 
         return new SourceRecord(sourcePartition,
                 sourceOffset,
                 sheetsImputationTopic,
                 Schema.STRING_SCHEMA,
-                imputationInformation.developerName(),
+                iterationInformation.developerName(),
                 SheetsSchema.sheetsInputationSchema,
                 imputationSchema);
 
