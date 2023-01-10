@@ -51,7 +51,7 @@ public class ElasticsearchApi {
         //System.out.println("topic " + topic);
         //System.out.println("ref " + reference);
 
-        RestClient lowLevelClient = RestClient.builder(new HttpHost("localhost", PORT))
+        RestClient lowLevelClient = RestClient.builder(new HttpHost("elasticsearch", PORT))
                 .build();
         RestHighLevelClient client = new RestHighLevelClient(lowLevelClient);
         SearchResponse response = client.search(new SearchRequest(topic)
