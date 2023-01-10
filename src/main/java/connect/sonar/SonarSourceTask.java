@@ -46,40 +46,39 @@ public class SonarSourceTask extends SourceTask {
 	private String sonarIssueTopic;
 	private Date snapshotDate;
 
-	private Integer interval;
+	private String pollIntervalConfiguration;
 
-	
-	// millis of last poll
-	private long lastPoll = 0;
+	private Integer pollInterval;
 
+	private Long lastPollTime = 0L;
 	
-	private final Logger log = LoggerFactory.getLogger(SonarSourceTask.class);
+	private final Logger taskLogger = LoggerFactory.getLogger(SonarSourceTask.class);
 
 	@Override
 	public void start(Map<String, String> props) {
 
-		log.info("connect-sonarcloud: start");
+		taskLogger.info("connect-sonarcloud: start");
 		sonarToken = props.get(SonarSourceConfig.SONAR_TOKEN_CONFIG);
 		sonarProjectKeys = props.get(SonarSourceConfig.SONAR_PROJECT_KEYS_CONFIG);
 		sonarMetricKeys = props.get(SonarSourceConfig.SONAR_METRIC_KEYS_CONFIG);
 		sonarMeasureTopic = props.get(SonarSourceConfig.SONAR_MEASURE_TOPIC_CONFIG);
 		sonarIssueTopic = props.get(SonarSourceConfig.SONAR_ISSUE_TOPIC_CONFIG);
-		String sonarInterval = props.get(SonarSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG);
+		pollIntervalConfiguration = props.get(SonarSourceConfig.SONAR_INTERVAL_SECONDS_CONFIG);
 		String manualSnapshotDate  = props.get( SonarSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
 		String auxProperties = props.toString();
-		log.info("properties: {}", auxProperties);
-		log.info(SonarSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
-		log.info("manual snapshot date: {}", manualSnapshotDate);
+		taskLogger.info("properties: {}", auxProperties);
+		taskLogger.info(SonarSourceConfig.SONAR_SNAPSHOTDATE_CONFIG);
+		taskLogger.info("manual snapshot date: {}", manualSnapshotDate);
 
 		if (manualSnapshotDate == null || manualSnapshotDate.isEmpty()) {
 			snapshotDate = new Date();
-			log.info("Using today as snapshotDate.");
+			taskLogger.info("Using today as snapshotDate.");
 		} else {
-			log.info("Using manual snapshotDate: {}", manualSnapshotDate);
+			taskLogger.info("Using manual snapshotDate: {}", manualSnapshotDate);
 			try {
 				snapshotDate = ymd.parse(manualSnapshotDate);
 			} catch (ParseException e) {
-				log.warn("Config value for snapshotDate could not be parsed.");
+				taskLogger.warn("Config value for snapshotDate could not be parsed.");
 				snapshotDate = new Date();
 			}
 		}
@@ -87,26 +86,32 @@ public class SonarSourceTask extends SourceTask {
 		if (sonarProjectKeys ==null) {
 			throw new ConnectException("No base Component and no componentRoot specified, exiting.");
 		}
-		if ((sonarInterval == null || sonarInterval.isEmpty())) {
-			interval = 3600;
-		} else {
-			interval = Integer.parseInt(sonarInterval);
-		}
+		setPollConfiguration();
+	}
 
+	private void setPollConfiguration() {
+
+		if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) {
+			pollInterval = 3600;
+		} else{
+			pollInterval = Integer.parseInt(pollIntervalConfiguration);
+		}
 	}
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
 
-		List<SourceRecord> records = new ArrayList<>(); 
+		List<SourceRecord> records = new ArrayList<>();
 
-		if (lastPoll != 0 && System.currentTimeMillis() < (lastPoll + (interval * 1000))) {
-			Thread.sleep(1000);
-			log.info("sleeping task");
-			return records;
+		String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
+				+ " interval:" + pollInterval;
+		taskLogger.info("Task Poll {}", messageTaskPollInfo);
+		if (lastPollTime != 0) {
+			if (System.currentTimeMillis() < ( lastPollTime + (pollInterval * 1000))) {
+				Thread.sleep(1000);
+				return records;
+			}
 		}
-
-		lastPoll = System.currentTimeMillis();
-
+		lastPollTime = System.currentTimeMillis();
 		String snapshotDateString = ymd.format(snapshotDate);
 
 		int page = 0;
@@ -166,7 +171,7 @@ public class SonarSourceTask extends SourceTask {
 				result.add(sr);
 			}
 		}
-		log.info("Found {} metrics", result.size());
+		taskLogger.info("Found {} metrics", result.size());
 		return result;
 	}
 
@@ -202,16 +207,12 @@ public class SonarSourceTask extends SourceTask {
 			m.put("2", "2");
 			
 			SourceRecord sr = new SourceRecord(m, m, sonarIssueTopic, SonarSchema.sonarissue , auxIssue);
-			//log.info("Source record: {}", sr);
+			taskLogger.info("Source record: {}", sr);
 			result.add(sr);
 		}
-		log.info("Found {} issues ", result.size());
+		taskLogger.info("Found {} issues ", result.size());
 		return result;
 	}
-	
-	
-	
-
 
 	@Override
 	public void stop() {
