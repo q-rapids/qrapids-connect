@@ -21,11 +21,10 @@ public class Driver {
         sheetsSourceTask.start(config);
         while (true) {
             List<SourceRecord> records = sheetsSourceTask.poll();
-            /*
             for (SourceRecord sr : records) {
                 String sourceRecordResult = sr.toString();
                 driverLogger.log(Level.INFO, "Result: {}", sourceRecordResult);
-            }*/
+            }
         }
     }
 }
