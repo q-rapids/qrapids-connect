@@ -4,21 +4,22 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarqube.measures;
+package model.sonarcloud.measures;
 
 /**
- * BaseComponent API result
- * @author Max Tiessler & Axel Wickenkamp
+ * Component API result
+ * @author Axel Wickenkamp & Max Tiessler
  *
  */
-public class BaseComponent {
+public class Component {
 	
 	public String id;
 	public String key;
 	public String name;
 	public String qualifier;
+	public String path;
+	public String language;
 	
 	public Measure measures[];
 	
-
 }

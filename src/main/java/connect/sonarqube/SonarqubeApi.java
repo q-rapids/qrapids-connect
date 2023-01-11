@@ -7,8 +7,8 @@ package connect.sonarqube;
 
 import com.google.gson.Gson;
 
-import model.sonarqube.issues.SonarcubeIssuesResult;
-import model.sonarqube.measures.SonarcubeMeasuresResult;
+import model.sonarqube.issues.SonarIssuesResult;
+import model.sonarqube.measures.SonarMeasuresResult;
 import rest.RESTInvoker;
 
 /**
@@ -19,22 +19,22 @@ import rest.RESTInvoker;
 public class SonarqubeApi {
 	
 	
-	public static SonarcubeMeasuresResult getMeasures(String sonarURL, String username, String password, String metricKeys, String sonarBaseComponentKey, int pageIndex) {
+	public static SonarMeasuresResult getMeasures(String sonarURL, String username, String password, String metricKeys, String sonarBaseComponentKey, int pageIndex) {
 		
 		RESTInvoker ri = new RESTInvoker(sonarURL + "/api/measures/component_tree?" + "metricKeys=" + metricKeys + "&baseComponentKey=" + sonarBaseComponentKey + "&pageIndex=" + pageIndex , username, password);
 		
 		Gson  gson = new Gson();
 
-		return gson.fromJson(ri.getDataFromServer(""), SonarcubeMeasuresResult.class);
+		return gson.fromJson(ri.getDataFromServer(""), SonarMeasuresResult.class);
 	}
 	
-	public static SonarcubeIssuesResult getIssues(String sonarUrl, String username, String password, String projectKeys, int p) {
+	public static SonarIssuesResult getIssues(String sonarUrl, String username, String password, String projectKeys, int p) {
 		
 		RESTInvoker ri = new RESTInvoker(sonarUrl + "/api/issues/search?projectKeys=" + projectKeys + "&p=" + p, username, password);
 		
 		Gson  gson = new Gson();
 
-		return gson.fromJson(ri.getDataFromServer(""), SonarcubeIssuesResult.class);
+		return gson.fromJson(ri.getDataFromServer(""), SonarIssuesResult.class);
 	}
 	
 }

@@ -6,19 +6,19 @@
 
 package model.sonarqube.measures;
 
+import model.sonarqube.Paging;
+
 /**
- * BaseComponent API result
+ * SonarcubeMeasuresResult API result
  * @author Max Tiessler & Axel Wickenkamp
  *
  */
-public class BaseComponent {
+public class SonarMeasuresResult {
 	
-	public String id;
-	public String key;
-	public String name;
-	public String qualifier;
+	public Paging paging;
 	
-	public Measure measures[];
+	public Component baseComponent;
+	public Component components[];
 	
 
 }

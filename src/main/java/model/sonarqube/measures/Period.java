@@ -8,7 +8,7 @@ package model.sonarqube.measures;
 
 /**
  * Sonarqube Period API result
- * @author Axeel Wickenkamp
+ * @author Max Tiessler & Axel Wickenkamp
  *
  */
 public class Period {

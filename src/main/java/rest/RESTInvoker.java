@@ -6,13 +6,17 @@
 
 package rest;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.http.HttpException;
 
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.AccessDeniedException;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -30,7 +34,8 @@ public class RESTInvoker {
     private final String username;
     private final String password;
     private String secret = null;
- 
+    public static final String HTTP_STATUS_FORBIDDEN = "Access forbidden";
+
     public RESTInvoker(String baseUrl, String username, String password) {
         this.baseUrl = baseUrl;
         this.username = username;
@@ -46,17 +51,17 @@ public class RESTInvoker {
     
     public String getDataFromServer(String path) {
         StringBuilder sb = new StringBuilder();
+        int code = 0;
         try {
-
-        	
             URL url = new URL(baseUrl + path);
 
-            URLConnection urlConnection = setUsernamePassword(url);
+            HttpURLConnection urlConnection = (HttpURLConnection) setUsernamePassword(url);
             
             if(secret != null){
-        		urlConnection.setRequestProperty("PRIVATE-TOKEN",secret);
+        		urlConnection.setRequestProperty("Authorization","Bearer " + secret);
         	}
 
+            code = urlConnection.getResponseCode();
             BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
             
             String line;
@@ -67,6 +72,7 @@ public class RESTInvoker {
  
             return sb.toString();
         } catch (Exception e) {
+            if(code == 403) throw new RuntimeException(HTTP_STATUS_FORBIDDEN, e);
             throw new RuntimeException(e);
         }
     }

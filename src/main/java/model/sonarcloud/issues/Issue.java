@@ -3,11 +3,11 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarqube.issues;
+package model.sonarcloud.issues;
 
 /**
  * SonarCloud Issues API result
- * @author Max Tiessler & Axel Wickenkamp
+ * @author Axel Wickenkamp & Max Tiessler
  *
  */
 public class Issue {

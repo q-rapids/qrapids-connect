@@ -3,17 +3,17 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarqube.issues;
+package model.sonarcloud.issues;
 
-import model.sonarqube.Paging;
+import model.sonarcloud.Paging;
 
 /**
- * SonarcubeIssuesResult API result
- * @author Axel Wickenkamp
+ * SonarCloudIssuesResult API result
+ * @author Axel Wickenkamp & Max Tiessler
  *
  */
-public class SonarcubeIssuesResult {
-	
+public class SonarCloudIssuesResult {
+
 	public int total;
 	public int p;
 	public int ps;

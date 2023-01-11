@@ -4,17 +4,15 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarqube.measures;
+package model.sonarcloud.measures;
 
 /**
  * Sonarqube Measure API result
- * @author Max Tiessler & Axel Wickenkamp
+ * @author Axel Wickenkamp & Max Tiessler
  *
  */
 public class Measure {
 	
 	public String metric;
 	public String value;
-	
-	public Period periods[];
 }

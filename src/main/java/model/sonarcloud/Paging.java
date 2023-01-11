@@ -4,12 +4,11 @@
  * terms of the Apache License 2.0 license
  */
 
-package model.sonarqube;
+package model.sonarcloud;
 
 /**
  * Paging API result
- * @author Max Tiessler & Axel Wickenkamp
- *
+ * @author Axel Wickenkamp & Max Tiessler
  */
 public class Paging {
 	
