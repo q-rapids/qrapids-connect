@@ -129,9 +129,9 @@ public class SheetsSourceTask extends SourceTask {
         Double rfh = information.get(3).toString().contains(",") ? Double.parseDouble(information.get(3).toString().replace(",", ".")) : Double.parseDouble(information.get(3).toString());
         Double cph = information.get(4).toString().contains(",") ? Double.parseDouble(information.get(4).toString().replace(",", ".")) : Double.parseDouble(information.get(4).toString());
         Double fh = information.get(5).toString().contains(",") ? Double.parseDouble(information.get(5).toString().replace(",", ".")) : Double.parseDouble(information.get(5).toString());
-        Double doh = information.get(6).toString().contains(",") ? Double.parseDouble(information.get(6).toString().replace(",", ".")) : Double.parseDouble(information.get(6).toString());
+        Double dh = information.get(6).toString().contains(",") ? Double.parseDouble(information.get(6).toString().replace(",", ".")) : Double.parseDouble(information.get(6).toString());
         Double gph = information.get(7).toString().contains(",") ? Double.parseDouble(information.get(7).toString().replace(",", ".")) : Double.parseDouble(information.get(7).toString());
-        Double dh = information.get(8).toString().contains(",") ? Double.parseDouble(information.get(8).toString().replace(",", ".")) : Double.parseDouble(information.get(8).toString());
+        Double doh = information.get(8).toString().contains(",") ? Double.parseDouble(information.get(8).toString().replace(",", ".")) : Double.parseDouble(information.get(8).toString());
         Double ph = information.get(9).toString().contains(",") ? Double.parseDouble(information.get(9).toString().replace(",", ".")) : Double.parseDouble(information.get(9).toString());
         return new IterationInformation(teamId)
                 .teamName(teamName)
@@ -243,11 +243,13 @@ public class SheetsSourceTask extends SourceTask {
         imputationSchema.put(SheetsSchema.DOC_HOURS, iterationInformation.docHours());
         imputationSchema.put(SheetsSchema.PRES_HOURS, iterationInformation.presHours());
 
+        String key = iterationInformation.sprintName() + " - " + iterationInformation.developerName();
+
         return new SourceRecord(sourcePartition,
                 sourceOffset,
                 sheetsImputationTopic,
                 Schema.STRING_SCHEMA,
-                iterationInformation.developerName(),
+                key,
                 SheetsSchema.sheetsInputationSchema,
                 imputationSchema);
 
