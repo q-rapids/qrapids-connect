@@ -57,6 +57,8 @@ public class GithubSourceTask extends SourceTask {
 
 	private Boolean firstPoll = true;
 
+	private Map<String, Boolean> firstPollInRepo;
+
 	private final Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
 	private final String NULL_STRING = "null";
@@ -107,6 +109,7 @@ public class GithubSourceTask extends SourceTask {
 				defaultDate = onlyDate.parse(createdSince);
 				issueMostRecentUpdate = onlyDate.parse(createdSince);
 				for(String url : githubUrls){
+					firstPollInRepo.put(url, true);
 					Map<String, Date> aux = new HashMap<>();
 					commitMostRecentUpdate.put(url, aux);
 				}
@@ -118,12 +121,14 @@ public class GithubSourceTask extends SourceTask {
 		} else {
 			githubUrls = getGithubUrlsFromOrg(githubOrgUrl);
 			for (String url : githubUrls) {
-				if (commitMostRecentUpdate.get(url) == null) {
+				if (!firstPollInRepo.containsKey(url)) {
+					firstPollInRepo.put(url, true);
 					Map<String, Date> aux = new HashMap<>();
 					commitMostRecentUpdate.put(url, aux);
 				}
 			}
 			//log.info("Issue info updated since: " + issueMostRecentUpdate);
+			log.info("Is it the repos' first poll: " + firstPollInRepo);
 			log.info("Commit info updated since: " + commitMostRecentUpdate);
 		}
 
@@ -268,11 +273,13 @@ public class GithubSourceTask extends SourceTask {
 				log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
 
-				if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				if (firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				else if (firstPollInRepo.get(url) && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
 
 				if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
 				commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
+				if (firstPollInRepo.get(url)) firstPollInRepo.put(url, false);
 			}
 			firstPoll = false;
 
@@ -501,6 +508,7 @@ public class GithubSourceTask extends SourceTask {
 	public void start(Map<String, String> props) {
 
 		commitMostRecentUpdate = new HashMap<>();
+		firstPollInRepo = new HashMap<>();
 
 		log.info("connect-github: start");
 		log.info(props.toString());
