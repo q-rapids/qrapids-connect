@@ -35,4 +35,6 @@ public class IterationInformation {
     private Double docHours;
 
     private Double presHours;
+
+    private Double altHours;
 }

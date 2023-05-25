@@ -133,6 +133,7 @@ public class SheetsSourceTask extends SourceTask {
         Double gph = information.get(7).toString().contains(",") ? Double.parseDouble(information.get(7).toString().replace(",", ".")) : Double.parseDouble(information.get(7).toString());
         Double doh = information.get(8).toString().contains(",") ? Double.parseDouble(information.get(8).toString().replace(",", ".")) : Double.parseDouble(information.get(8).toString());
         Double ph = information.get(9).toString().contains(",") ? Double.parseDouble(information.get(9).toString().replace(",", ".")) : Double.parseDouble(information.get(9).toString());
+        Double ah = information.get(10).toString().contains(",") ? Double.parseDouble(information.get(10).toString().replace(",", ".")) : Double.parseDouble(information.get(10).toString());
         return new IterationInformation(teamId)
                 .teamName(teamName)
                 .spreadsheetId(spreadSheetId)
@@ -147,7 +148,8 @@ public class SheetsSourceTask extends SourceTask {
                 .desHours(dh)
                 .gpHours(gph)
                 .docHours(doh)
-                .presHours(ph);
+                .presHours(ph)
+                .altHours(ah);
     }
     private List<IterationInformation> generateImputationInformations(final List<ValueRange> googleSheetsData) {
         ArrayList<IterationInformation> iterationInformations = new ArrayList<>();
@@ -242,6 +244,7 @@ public class SheetsSourceTask extends SourceTask {
         imputationSchema.put(SheetsSchema.GP_HOURS, iterationInformation.gpHours());
         imputationSchema.put(SheetsSchema.DOC_HOURS, iterationInformation.docHours());
         imputationSchema.put(SheetsSchema.PRES_HOURS, iterationInformation.presHours());
+        imputationSchema.put(SheetsSchema.ALT_HOURS, iterationInformation.altHours());
 
         String key = iterationInformation.sprintName() + " - " + iterationInformation.developerName();
 
