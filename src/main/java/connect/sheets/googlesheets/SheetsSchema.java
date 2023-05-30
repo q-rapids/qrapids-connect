@@ -31,6 +31,7 @@ public class SheetsSchema {
 	public static final String GP_HOURS = "gp_hours";
 	public static final String DOC_HOURS = "doc_hours";
 	public static final String PRES_HOURS = "pres_hours";
+	public static final String ALT_HOURS = "alt_hours";
 
 
 
@@ -51,5 +52,6 @@ public class SheetsSchema {
 			.field(GP_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
 			.field(DOC_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
 			.field(PRES_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
+			.field(ALT_HOURS, Schema.OPTIONAL_FLOAT64_SCHEMA)
 			.build();
 }
