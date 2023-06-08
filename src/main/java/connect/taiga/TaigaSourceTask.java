@@ -51,13 +51,6 @@ public class TaigaSourceTask extends SourceTask {
     }
 
     private Boolean followsPattern(String description) {
-        /*
-        String a = "AS";
-        String b = "I WANT";
-        String c = "SO THAT";
-        description = description.toUpperCase();
-        return description.contains("AS") && description.contains("I WANT") && description.contains("SO THAT") || description.contains("COM A") && description.contains("VULL") && description.contains("DE MANERA QUE") || description.contains("COMO") && description.contains("QUIERO") && description.contains("DE MANERA QUE");
-         */
         List<String> patterns = Arrays.asList(
             "AS.*I WANT.*SO THAT.*",
             "AS.*I WANT.*TO.*",
