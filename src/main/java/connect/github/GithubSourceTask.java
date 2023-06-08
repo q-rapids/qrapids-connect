@@ -33,6 +33,7 @@ public class GithubSourceTask extends SourceTask {
 
 	private final String version = "0.0.1";
 
+	private String githubOrgUrl;
 	private String[] githubUrls;
 	private String githubSecret;
 	private String githubUser;
@@ -55,6 +56,8 @@ public class GithubSourceTask extends SourceTask {
 	private long lastPoll = 0;
 
 	private Boolean firstPoll = true;
+
+	private Map<String, Boolean> firstPollInRepo;
 
 	private final Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
@@ -101,21 +104,31 @@ public class GithubSourceTask extends SourceTask {
 
 		// if mostRecentUpdate is available from offset -> storage use it
 
-		if(firstPoll){
-			try{
+		if (firstPoll) {
+			try {
 				defaultDate = onlyDate.parse(createdSince);
 				issueMostRecentUpdate = onlyDate.parse(createdSince);
 				for(String url : githubUrls){
+					firstPollInRepo.put(url, true);
 					Map<String, Date> aux = new HashMap<>();
 					commitMostRecentUpdate.put(url, aux);
 				}
 
-			}catch(ParseException e){
-				log.info("unable to parse "+createdSince);
+			} catch(ParseException e){
+				log.info("unable to parse " + createdSince);
 				throw new InterruptedException();
 			}
-		}else{
+		} else {
+			githubUrls = getGithubUrlsFromOrg(githubOrgUrl);
+			for (String url : githubUrls) {
+				if (!firstPollInRepo.containsKey(url)) {
+					firstPollInRepo.put(url, true);
+					Map<String, Date> aux = new HashMap<>();
+					commitMostRecentUpdate.put(url, aux);
+				}
+			}
 			//log.info("Issue info updated since: " + issueMostRecentUpdate);
+			log.info("Is it the repos' first poll: " + firstPollInRepo);
 			log.info("Commit info updated since: " + commitMostRecentUpdate);
 		}
 
@@ -146,15 +159,11 @@ public class GithubSourceTask extends SourceTask {
 
  		*/
 
-
-
 		//commits
 		try {
 			for(String url : githubUrls) {
 				Repository repo = GithubApi.getRepository(url, githubSecret);
-
 				log.info("Obtaining commits from " + url);
-
 				Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(url);
 
 				int offset = 1;
@@ -264,16 +273,18 @@ public class GithubSourceTask extends SourceTask {
 				log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
 
-				if(firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				if (firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				else if (firstPollInRepo.get(url) && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
 
 				if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
 				commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
+				if (firstPollInRepo.get(url)) firstPollInRepo.put(url, false);
 			}
 			firstPoll = false;
 
 		} catch (RuntimeException e){
-			if(e.getMessage().equals(RESTInvoker.HTTP_STATUS_FORBIDDEN)) {
+			if(RESTInvoker.HTTP_STATUS_FORBIDDEN.equals(e.getMessage())) {
 				log.info("ERROR: GitHub API rate limit exeeded. The data will not be updated until the next poll");
 			}
 			else{
@@ -401,6 +412,14 @@ public class GithubSourceTask extends SourceTask {
         return result;
     }
 
+	private String[] getGithubUrlsFromOrg(String githubOrgUrl) {
+		Repository[] repos = GithubApi.getReposFromOrganization(githubOrgUrl, githubSecret);
+		String[] repoUrls = new String[repos.length];
+		for (int i = 0; i < repos.length; ++i)
+			repoUrls[i] = repos[i].url;
+		return repoUrls;
+	}
+
 /*
 	private List<SourceRecord> getIssueSourceRecords(GithubIssues redmineIssues, Date updatedSince) {
 
@@ -489,15 +508,13 @@ public class GithubSourceTask extends SourceTask {
 	public void start(Map<String, String> props) {
 
 		commitMostRecentUpdate = new HashMap<>();
+		firstPollInRepo = new HashMap<>();
 
 		log.info("connect-github: start");
 		log.info(props.toString());
 
-		String aux		= props.get( GithubSourceConfig.GITHUB_URL_CONFIG);
-
-		githubUrls = aux.split(",");
-
-		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG);
+		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG );
+		githubOrgUrl 	= props.get( GithubSourceConfig.GITHUB_URL_CONFIG );
 		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
 		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
 		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
@@ -505,7 +522,8 @@ public class GithubSourceTask extends SourceTask {
 		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
 		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
 		taiga_topic		= props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
-		
+		githubUrls 		= getGithubUrlsFromOrg(githubOrgUrl);
+
 		for(String url : githubUrls) log.info("github.url: " + url);
 		log.info("github.created.since: " + createdSince);
 		log.info("github.interval.seconds: " + githubInterval);
@@ -521,20 +539,21 @@ public class GithubSourceTask extends SourceTask {
 
 		// offsets present?
 		Map<String,String> sourcePartition = new HashMap<>();
-		sourcePartition.put( "githubUrl", githubUrls[0] );
-
-        if ( context != null ) {
-            Map<String,Object> offset = context.offsetStorageReader().offset(sourcePartition);
-            if (offset != null && offset.containsKey("updated") ) {
-                try {
-                    issueMostRecentUpdate = dfZULU.parse( (String) offset.get("updated") );
-                    log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
-                } catch (ParseException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }
+		if (githubUrls.length != 0) {
+			sourcePartition.put("githubUrl", githubUrls[0]);
+			if (context != null) {
+				Map<String, Object> offset = context.offsetStorageReader().offset(sourcePartition);
+				if (offset != null && offset.containsKey("updated")) {
+					try {
+						issueMostRecentUpdate = dfZULU.parse((String) offset.get("updated"));
+						log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+		}
 	}
 
 	@Override
