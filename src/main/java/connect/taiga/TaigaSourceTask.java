@@ -4,13 +4,10 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 import model.taiga.Epic;
 import model.taiga.Issue;
 import model.taiga.Milestone;
@@ -54,11 +51,27 @@ public class TaigaSourceTask extends SourceTask {
     }
 
     private Boolean followsPattern(String description) {
-        String a = "AS";
-        String b = "I WANT";
-        String c = "SO THAT";
-        description = description.toUpperCase();
-        return description.contains("AS") && description.contains("I WANT") && description.contains("SO THAT") || description.contains("COM A") && description.contains("VULL") && description.contains("DE MANERA QUE") || description.contains("COMO") && description.contains("QUIERO") && description.contains("DE MANERA QUE");
+        List<String> patterns = Arrays.asList(
+            "AS.*I WANT.*SO THAT.*",
+            "AS.*I WANT.*TO.*",
+            "COMO.*QUIERO.*DE MANERA QUE.*",
+            "COMO.*QUIERO.*DE FORMA QUE.*",
+            "COMO.*QUIERO.*PARA.*",
+            "COMO.*QUIERO.*POR.*",
+            "COMO.*QUIERO.*PORQUÉ.*",
+            "COMO.*QUIERO.*PORQUE.*",
+            "COM.*VULL.*DE MANERA QUE.*",
+            "COM.*VULL.*DE FORMA QUE.*",
+            "COM.*VULL.*PER.*",
+            "COM.*VULL.*PERQUE.*",
+            "COM.*VULL.*PERQUÈ.*",
+            "COM.*VULL.*PERQUÉ.*"
+        );
+        for (String pattern : patterns) {
+            Pattern regex = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+            if (regex.matcher(description.toUpperCase()).matches()) return true;
+        }
+        return false;
     }
 
     private Boolean hasAcceptanceCriteria(String criteria) {
