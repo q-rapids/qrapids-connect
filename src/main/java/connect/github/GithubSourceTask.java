@@ -350,7 +350,7 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
 
 			boolean task = i.commit.message.toLowerCase().contains("task") || i.commit.message.toLowerCase().contains("tasca") || i.commit.message.toLowerCase().contains("tarea");
-			if (task) {
+			if (/*task*/ false ) { //TODO: Esto está mal, solo para prueba
 				String num = getTaskNumber(i.commit.message);
 				if(num != null) {
 					try {
@@ -548,7 +548,6 @@ public class GithubSourceTask extends SourceTask {
 						issueMostRecentUpdate = dfZULU.parse((String) offset.get("updated"));
 						log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
 					} catch (ParseException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
