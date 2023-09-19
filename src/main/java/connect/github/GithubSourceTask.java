@@ -17,10 +17,10 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 
 import model.github.*;
-import org.elasticsearch.action.search.SearchResponse;
+import org.bson.Document;
 import rest.RESTInvoker;
 
-import static connect.elasticsearch.ElasticsearchApi.getTaskReference;
+import static connect.mongodb.MongoDBApi.getTaskReference;
 
 
 public class GithubSourceTask extends SourceTask {
@@ -350,24 +350,24 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
 
 			boolean task = i.commit.message.toLowerCase().contains("task") || i.commit.message.toLowerCase().contains("tasca") || i.commit.message.toLowerCase().contains("tarea");
-			if (/*task*/ false ) { //TODO: Esto está mal, solo para prueba
+			if (task) {
 				String num = getTaskNumber(i.commit.message);
 				if(num != null) {
 					try {
-						SearchResponse response = getTaskReference(taiga_topic, Integer.parseInt(num));
-						if(response.getHits().totalHits == 1) {
+						List<Document> response = getTaskReference(taiga_topic, Integer.parseInt(num));
+						if(response.size() == 1) {
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, true);
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, num);
-						} else if(response.getHits().totalHits == 0) {
+						} else if(response.size() == 0) {
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
 						} else {
-							log.info("ERROR: obtained multiple tasks with reference " + num );
+							log.info("ERROR: obtained multiple tasks with reference " + num);
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, false);
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
 						}
-					} catch (IOException e) {
-						log.info("ERROR: Error on fetch of task reference " + num );
+					} catch (Exception e) {
+						log.info("ERROR: Error on fetch of task reference " + num);
 						e.printStackTrace();
 						commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, true);
 						commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, NULL_STRING);
