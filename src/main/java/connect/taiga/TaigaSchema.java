@@ -7,8 +7,6 @@ import java.util.Date;
 
 public class TaigaSchema {
 
-    //METRICS ESTO VA A DOLER
-
     //EPIC
     public static String FIELD_TAIGA_EPIC_SUBJECT = "subject";
     public static String FIELD_TAIGA_EPIC_ID = "id";

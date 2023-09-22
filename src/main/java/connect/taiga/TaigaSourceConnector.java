@@ -36,13 +36,14 @@ public class TaigaSourceConnector extends SourceConnector{
     @Override
     public void start(Map<String, String> props) {
         log.info(props.toString());
+
         taigaURL = props.get( TaigaSourceConfig.TAIGA_URL_CONFIG );
         taigaUser = props.get( TaigaSourceConfig.TAIGA_USER_CONFIG );
         taigaPass = props.get( TaigaSourceConfig.TAIGA_PASS_CONFIG );
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG );
+        taigaTeamsNum = props.get( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG );
         taigaTaskCustomAttributes = props.get( TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG );
         taigaUserstoryCustomAttributes = props.get( TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG );
-        taigaTeamsNum = props.get( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG );
 
         taigaSlug = new ArrayList<>();
         taigaIssueTopic = new ArrayList<>();
@@ -52,15 +53,17 @@ public class TaigaSourceConnector extends SourceConnector{
 
         int teamsNum = Integer.parseInt(taigaTeamsNum);
         for (int i = 0; i < teamsNum; ++i) {
-            taigaSlug.add( props.get( TaigaSourceConfig.TAIGA_SLUG_CONFIG + ".task-" + i ) );
-            taigaIssueTopic.add( props.get( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG + ".task-" + i ) );
-            taigaMetricEpic.add( props.get( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG + ".task-" + i ) );
-            taigaMetricUserStory.add( props.get( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG + ".task-" + i ) );
-            taigaMetricTask.add( props.get( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG + ".task-" + i ) );
+            taigaSlug.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_SLUG_CONFIG ) );
+            taigaIssueTopic.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG ) );
+            taigaMetricEpic.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG ) );
+            taigaMetricUserStory.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG ) );
+            taigaMetricTask.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG ) );
         }
 
         if ( taigaURL == null || taigaURL.isEmpty() )
-            throw new ConnectException("TaigaSourceConnector configuration must include 'redmine.url' setting");
+            throw new ConnectException("TaigaSourceConnector configuration must include 'taiga.url' setting");
+        if ( taigaTeamsNum == null || taigaTeamsNum.isEmpty() )
+            throw new ConnectException("TaigaSourceConnector configuration must include 'taiga.teams.num' setting");
     }
 
     @Override
@@ -70,27 +73,34 @@ public class TaigaSourceConnector extends SourceConnector{
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
+
         ArrayList<Map<String, String>> configs = new ArrayList<>();
-        Map<String, String> config = new HashMap<>();
+        int numTeams = Integer.parseInt(taigaTeamsNum);
+        if ( numTeams != maxTasks )
+            throw new ConnectException("TaigaSourceConnector configuration " +
+            "'taiga.teams.num' must be equal to configuration 'tasks.max'");
 
-        config.put( TaigaSourceConfig.TAIGA_URL_CONFIG, taigaURL );
-        config.put( TaigaSourceConfig.TAIGA_USER_CONFIG, taigaUser );
-        config.put( TaigaSourceConfig.TAIGA_PASS_CONFIG, taigaPass );
-        config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, taigaInterval );
-        config.put( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG, taigaTeamsNum );
-        config.put( TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, taigaTaskCustomAttributes );
-        config.put( TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, taigaUserstoryCustomAttributes );
+        for (int i = 0; i < maxTasks; ++i) {
 
-        int teamsNum = Integer.parseInt(taigaTeamsNum);
-        for (int i = 0; i < teamsNum; ++i) {
-            config.put( TaigaSourceConfig.TAIGA_SLUG_CONFIG + ".task-" + i, taigaSlug.get(i));
-            config.put( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG+ ".task-" + i, taigaIssueTopic.get(i));
-            config.put( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG + ".task-" + i, taigaMetricEpic.get(i));
-            config.put( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG + ".task-" + i, taigaMetricUserStory.get(i));
-            config.put( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG + ".task-" + i, taigaMetricTask.get(i));
+            Map<String, String> config = new HashMap<>();
+
+            config.put( TaigaSourceConfig.TAIGA_URL_CONFIG, taigaURL );
+            config.put( TaigaSourceConfig.TAIGA_USER_CONFIG, taigaUser );
+            config.put( TaigaSourceConfig.TAIGA_PASS_CONFIG, taigaPass );
+            config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, taigaInterval );
+            config.put( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG, taigaTeamsNum );
+            config.put( TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, taigaTaskCustomAttributes );
+            config.put( TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, taigaUserstoryCustomAttributes );
+
+            config.put( TaigaSourceConfig.TAIGA_SLUG_CONFIG, taigaSlug.get(i));
+            config.put( TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG, taigaIssueTopic.get(i));
+            config.put( TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG, taigaMetricEpic.get(i));
+            config.put( TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG, taigaMetricUserStory.get(i));
+            config.put( TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG, taigaMetricTask.get(i));
+
+            configs.add(config);
         }
 
-        configs.add(config);
         return configs;
     }
 

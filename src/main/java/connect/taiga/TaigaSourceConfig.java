@@ -55,7 +55,6 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final String TAIGA_TASK_TOPIC_CONFIG_DOC = "Topic to persist taiga task.";
     public static final String TAIGA_TASK_TOPIC_CONFIG_DEFAULT = "taiga.metric.task";
 
-
     public static final String TAIGA_INTERVAL_SECONDS_CONFIG = "taiga.interval.seconds";
     public static final String TAIGA_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
     public static final String TAIGA_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
@@ -67,7 +66,6 @@ public class TaigaSourceConfig extends AbstractConfig {
     public static final int TAIGA_TEAMS_NUMBER_CONFIG_DEFAULT = 1;
 
     public static final String TAIGA_GROUP = "TAIGA";
-
 
     public static final ConfigDef DEFS = new ConfigDef();
 
