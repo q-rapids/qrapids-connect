@@ -23,15 +23,18 @@ public class TaigaSourceTask extends SourceTask {
     private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
     private static final DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
     private String taigaUrl;
-    private String taigaSlug;
+    private List<String> taigaSlug;
     private String taigaUser;
     private String taigaPass;
     private String taigaToken;
-    private String issuetopic;
-    private String epictopic;
-    private String userstorytopic;
-    private String tasktopic;
+    private List<String> issuetopic;
+    private List<String> epictopic;
+    private List<String> userstorytopic;
+    private List<String> tasktopic;
+    private String taigaInterval;
     private Integer interval;
+    private String taigaTeamsNum;
+    private Integer teamsNum;
     private String taigaTaskCustomAttributes;
     private String taigaUserstoryCustomAttributes;
     private Integer count = 0;
@@ -40,6 +43,7 @@ public class TaigaSourceTask extends SourceTask {
     private static final DateFormat onlyDate;
     private long lastPoll = 0L;
     private Boolean firstPoll = true;
+    private int currentTaskID;
     private final Logger log = Logger.getLogger(TaigaSourceTask.class.getName());
 
     public TaigaSourceTask() {
@@ -78,12 +82,22 @@ public class TaigaSourceTask extends SourceTask {
 
         this.log.info("lastPollDeltaMillis:" + (System.currentTimeMillis() - this.lastPoll) + " interval:" + this.interval);
 
-        if (this.lastPoll != 0L && System.currentTimeMillis() < this.lastPoll + (long)(this.interval * 1000)) {
+        if (this.lastPoll != 0L &&
+            System.currentTimeMillis() < this.lastPoll + (long) (this.interval * 1000)
+            && this.currentTaskID == 0) {
+
             this.log.info("------- exit polling, " + (System.currentTimeMillis() - this.lastPoll) / 1000L + " secs since last poll.");
             Thread.sleep(1000L);
+
         }
+
         else {
-            this.lastPoll = System.currentTimeMillis();
+            if (this.currentTaskID == 0)
+                this.lastPoll = System.currentTimeMillis();
+
+            // Esperar entre equipo y equipo para evitar error HTTP 429
+            Thread.sleep(90000L);
+
             if (this.firstPoll) {
                 if (this.mostRecentUpdate != null)
                     this.updatedSince = onlyDate.format(this.mostRecentUpdate);
@@ -103,11 +117,8 @@ public class TaigaSourceTask extends SourceTask {
                 this.taigaToken = TaigaApi.Login(this.taigaUrl, this.taigaUser, this.taigaPass);
             else this.taigaToken = null;
 
-            // Esperar entre equipo y equipo para evitar error HTTP 429
-            Thread.sleep(120000L);
-
-            this.log.info("Start executing task with Taiga slug " + this.taigaSlug + "\n\n");
-            String taigaProjectId = String.valueOf(TaigaApi.getProjectId(this.taigaUrl, this.taigaSlug, this.taigaToken));
+            this.log.info("Start executing task " + this.currentTaskID + " with Taiga slug " + this.taigaSlug.get(this.currentTaskID) + "\n\n");
+            String taigaProjectId = String.valueOf(TaigaApi.getProjectId(this.taigaUrl, this.taigaSlug.get(this.currentTaskID), this.taigaToken));
             Project myProject = TaigaApi.getProject(this.taigaUrl, taigaProjectId, this.taigaToken);
             Issue[] redmineIssues = TaigaApi.getIssuesByProjectId(this.taigaUrl, taigaProjectId, this.taigaToken);
             records.addAll(this.getIssueSourceRecords(redmineIssues, myProject));
@@ -137,7 +148,11 @@ public class TaigaSourceTask extends SourceTask {
 
             this.mostRecentUpdate = maxUpdatedOn;
             this.firstPoll = false;
-            this.log.info("Finished executing task with Taiga slug " + this.taigaSlug + "\n\n");
+            this.log.info("Finished executing task " + this.currentTaskID +" with Taiga slug " + this.taigaSlug.get(this.currentTaskID) + "\n\n");
+
+            ++this.currentTaskID;
+            if (this.currentTaskID == this.teamsNum)
+                this.currentTaskID = 0;
         }
         return records;
     }
@@ -232,7 +247,7 @@ public class TaigaSourceTask extends SourceTask {
             sourcePartition.put("taigaUrl", this.taigaUrl);
             Map<String, String> sourceOffset = new HashMap<>();
             sourceOffset.put("updated", dfZULU.format(t.modified_date));
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.tasktopic, Schema.STRING_SCHEMA, t.id.toString(), TaigaSchema.taigaTask, tasktemp);
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.tasktopic.get(this.currentTaskID), Schema.STRING_SCHEMA, t.id.toString(), TaigaSchema.taigaTask, tasktemp);
             result.add(sr);
         }
 
@@ -334,7 +349,7 @@ public class TaigaSourceTask extends SourceTask {
             sourcePartition.put("taigaUrl", this.taigaUrl);
             Map<String, String> sourceOffset = new HashMap<>();
             sourceOffset.put("updated", dfZULU.format(u.modified_date));
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.userstorytopic, Schema.STRING_SCHEMA, u.id.toString(), TaigaSchema.taigaUserStory, ustemp);
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.userstorytopic.get(this.currentTaskID), Schema.STRING_SCHEMA, u.id.toString(), TaigaSchema.taigaUserStory, ustemp);
             result.add(sr);
         }
 
@@ -374,7 +389,7 @@ public class TaigaSourceTask extends SourceTask {
             sourcePartition.put("taigaUrl", this.taigaUrl);
             Map<String, String> sourceOffset = new HashMap<>();
             sourceOffset.put("updated", dfZULU.format(e.modified_date));
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.epictopic, Schema.STRING_SCHEMA, e.id.toString(), TaigaSchema.taigaEpic, struct);
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.epictopic.get(this.currentTaskID), Schema.STRING_SCHEMA, e.id.toString(), TaigaSchema.taigaEpic, struct);
             result.add(sr);
         }
 
@@ -447,7 +462,7 @@ public class TaigaSourceTask extends SourceTask {
             sourcePartition.put("taigaUrl", this.taigaUrl);
             Map<String, String> sourceOffset = new HashMap<>();
             sourceOffset.put("updated", dfZULU.format(i.modified_date));
-            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.issuetopic, Schema.STRING_SCHEMA, i.id.toString(), TaigaSchema.taigaIssue, struct);
+            SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, this.issuetopic.get(this.currentTaskID), Schema.STRING_SCHEMA, i.id.toString(), TaigaSchema.taigaIssue, struct);
             result.add(sr);
         }
 
@@ -462,21 +477,32 @@ public class TaigaSourceTask extends SourceTask {
         this.taigaUrl = props.get("taiga.url");
         this.taigaUser = props.get("username");
         this.taigaPass = props.get("password");
-        String taigaInterval = props.get("taiga.interval.seconds");
+        this.taigaInterval = props.get("taiga.interval.seconds");
+        this.taigaTeamsNum = props.get("taiga.teams.num");
         this.taigaTaskCustomAttributes = props.get("taskCustomAttributes");
         this.taigaUserstoryCustomAttributes = props.get("userstoryCustomAttributes");
 
-        this.taigaSlug = props.get("slug");
-        this.issuetopic = props.get("taiga.issue.topic");
-        this.epictopic = props.get("taiga.epic.topic");
-        this.userstorytopic = props.get("taiga.userstory.topic");
-        this.tasktopic = props.get("taiga.task.topic");
+        this.taigaSlug = new ArrayList<>();
+        this.issuetopic = new ArrayList<>();
+        this.epictopic = new ArrayList<>();
+        this.userstorytopic = new ArrayList<>();
+        this.tasktopic = new ArrayList<>();
+
+        this.teamsNum = Integer.parseInt(this.taigaTeamsNum);
+        for (int i = 0; i < teamsNum; ++i) {
+            this.taigaSlug.add( props.get("tasks." + i + ".slug") );
+            this.issuetopic.add( props.get("tasks." + i + ".taiga.issue.topic") );
+            this.epictopic.add( props.get("tasks." + i + ".taiga.epic.topic") );
+            this.userstorytopic.add( props.get("tasks." + i + ".taiga.userstory.topic") );
+            this.tasktopic.add( props.get("tasks." + i + ".taiga.task.topic") );
+        }
 
         this.log.info("taiga.url: " + this.taigaUrl);
         this.log.info("taiga.interval.seconds: " + taigaInterval);
         if (taigaInterval != null && !taigaInterval.isEmpty())
             this.interval = Integer.parseInt(taigaInterval);
         else this.interval = 3600;
+        currentTaskID = 0;
 
         Map<String, String> sourcePartition = new HashMap<>();
         sourcePartition.put("taigaUrl", this.taigaUrl);
