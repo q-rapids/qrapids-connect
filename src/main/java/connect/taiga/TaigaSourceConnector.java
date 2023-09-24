@@ -25,6 +25,7 @@ public class TaigaSourceConnector extends SourceConnector{
     private List<String> taigaMetricTask;
     private String taigaInterval;
     private String taigaTeamsNum;
+    private String taigaTeamsInterval;
     private String taigaTaskCustomAttributes;
     private String taigaUserstoryCustomAttributes;
 
@@ -42,6 +43,7 @@ public class TaigaSourceConnector extends SourceConnector{
         taigaPass = props.get( TaigaSourceConfig.TAIGA_PASS_CONFIG );
         taigaInterval = props.get( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG );
         taigaTeamsNum = props.get( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG );
+        taigaTeamsInterval = props.get( TaigaSourceConfig.TAIGA_TEAMS_INTERVAL_CONFIG );
         taigaTaskCustomAttributes = props.get( TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG );
         taigaUserstoryCustomAttributes = props.get( TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG );
 
@@ -82,6 +84,7 @@ public class TaigaSourceConnector extends SourceConnector{
         config.put( TaigaSourceConfig.TAIGA_PASS_CONFIG, taigaPass );
         config.put( TaigaSourceConfig.TAIGA_INTERVAL_SECONDS_CONFIG, taigaInterval );
         config.put( TaigaSourceConfig.TAIGA_TEAMS_NUMBER_CONFIG, taigaTeamsNum );
+        config.put( TaigaSourceConfig.TAIGA_TEAMS_INTERVAL_CONFIG, taigaTeamsInterval );
         config.put( TaigaSourceConfig.TAIGA_TASK_CUSTOM_ATTRIBUTES_CONFIG, taigaTaskCustomAttributes );
         config.put( TaigaSourceConfig.TAIGA_USERSTORY_CUSTOM_ATTRIBUTES_CONFIG, taigaUserstoryCustomAttributes );
 

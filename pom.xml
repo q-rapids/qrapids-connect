@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iese</groupId>
 	<artifactId>qrapids-connect-taiga</artifactId>
-	<version>global</version>
+	<version>1.5</version>
 	<name>Q-Rapids Kafka connectors</name>
 	<description>Connectors for jenkins, jira, sonarcube, svn, and redmine</description>
 

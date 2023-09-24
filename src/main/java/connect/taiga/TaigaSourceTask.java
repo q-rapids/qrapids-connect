@@ -35,6 +35,8 @@ public class TaigaSourceTask extends SourceTask {
     private Integer interval;
     private String taigaTeamsNum;
     private Integer teamsNum;
+    private String taigaTeamsInterval;
+    private Integer teamsInterval;
     private String taigaTaskCustomAttributes;
     private String taigaUserstoryCustomAttributes;
     private Integer count = 0;
@@ -96,7 +98,7 @@ public class TaigaSourceTask extends SourceTask {
                 this.lastPoll = System.currentTimeMillis();
 
             // Esperar entre equipo y equipo para evitar error HTTP 429
-            Thread.sleep(90000L);
+            Thread.sleep(this.teamsInterval * 1000L);
 
             if (this.firstPoll) {
                 if (this.mostRecentUpdate != null)
@@ -479,6 +481,7 @@ public class TaigaSourceTask extends SourceTask {
         this.taigaPass = props.get("password");
         this.taigaInterval = props.get("taiga.interval.seconds");
         this.taigaTeamsNum = props.get("taiga.teams.num");
+        this.taigaTeamsInterval = props.get("taiga.teams.interval.seconds");
         this.taigaTaskCustomAttributes = props.get("taskCustomAttributes");
         this.taigaUserstoryCustomAttributes = props.get("userstoryCustomAttributes");
 
@@ -499,9 +502,15 @@ public class TaigaSourceTask extends SourceTask {
 
         this.log.info("taiga.url: " + this.taigaUrl);
         this.log.info("taiga.interval.seconds: " + taigaInterval);
+
         if (taigaInterval != null && !taigaInterval.isEmpty())
             this.interval = Integer.parseInt(taigaInterval);
         else this.interval = 3600;
+
+        if (taigaTeamsInterval != null && !taigaTeamsInterval.isEmpty())
+            this.teamsInterval = Integer.parseInt(taigaTeamsInterval);
+        else this.teamsInterval = 120;
+
         currentTaskID = 0;
 
         Map<String, String> sourcePartition = new HashMap<>();
