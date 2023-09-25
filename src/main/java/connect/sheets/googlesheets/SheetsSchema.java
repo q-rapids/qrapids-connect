@@ -14,8 +14,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
  *
  */
 public class SheetsSchema {
-	
-	// Issues
+
 	public static final String TEAM_ID = "team_id";
 	public static final String TEAM_NAME = "team_name";
 	public static final String SPREADSHEET_ID = "spreadsheet_id";
@@ -33,10 +32,8 @@ public class SheetsSchema {
 	public static final String PRES_HOURS = "pres_hours";
 	public static final String ALT_HOURS = "alt_hours";
 
-
-
-	public static Schema sheetsInputationSchema =
-			SchemaBuilder.struct().name("sheetsInputation")
+	public static Schema sheetsImputationSchema =
+			SchemaBuilder.struct().name("sheetsImputation")
 			.field(TEAM_ID, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(TEAM_NAME, Schema.OPTIONAL_STRING_SCHEMA)
 			.field(SPREADSHEET_ID, Schema.OPTIONAL_STRING_SCHEMA)

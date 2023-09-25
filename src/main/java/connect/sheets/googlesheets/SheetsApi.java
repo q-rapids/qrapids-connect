@@ -279,7 +279,7 @@ public class SheetsApi {
 		try {
 			// Gets the values of the cells in the specified range.
 			result = getDataGoogleSheets(sprintNames, spreadsheetId);
-			sheetLogger.log(Level.INFO, "Retrieved {} member hours ranges", result.getValueRanges().size());
+			sheetLogger.log(Level.INFO, "Retrieved " + result.getValueRanges().size() + " member hours ranges");
 		} catch (GoogleJsonResponseException e) {
 			GoogleJsonError error = e.getDetails();
 			if (error.getCode() == 404) {

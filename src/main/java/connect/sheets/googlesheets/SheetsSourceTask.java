@@ -34,25 +34,36 @@ public class SheetsSourceTask extends SourceTask {
 
     private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
     private static final DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-    static {
-        dfZULU.setTimeZone(tzUTC);
-    }
+    static { dfZULU.setTimeZone(tzUTC); }
+
     private String pollIntervalConfiguration;
 
     private Integer pollInterval;
 
+    private String teamsNumConfiguration;
+
+    private Integer teamsNum;
+
+    private String teamsIntervalConfiguration;
+
+    private Integer teamsInterval;
+
     private Long lastPollTime = 0L;
 
-    private String spreadSheetId;
+    private List<String> spreadSheetId;
 
-    private String teamName;
+    private List<String> teamName;
 
     private String[] sprints;
-    private String sheetsImputationTopic;
+
+    private List<String> sheetsImputationTopic;
 
     private String teamId;
 
+    private int currentTaskID;
+
     private AuthorizationCredentials authorizationCredentials;
+
     private final Logger taskLogger = LoggerFactory.getLogger(SheetsSourceTask.class.getName());
 
     private void initializeAuthorizationCredentials(final Map<String, String> properties) {
@@ -60,39 +71,54 @@ public class SheetsSourceTask extends SourceTask {
         authorizationCredentials = AuthorizationCredentials.getInstance(properties);
     }
     private void initializeConfigurations(final Map<String, String> properties) {
-        spreadSheetId = properties.get(SheetsSourceConfig.SPREADSHEETS_ID);
-        if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), "")) {
-            throw new ConnectException("SheetsConnector configuration must include spreadsheet.ids setting");
-        }
 
         String sprintsConfig = properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES);
-        if (sprintsConfig == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES), "")) {
-            throw new ConnectException("SheetsConnector configuration must include sprint.names setting");
-        }
-
+        if (sprintsConfig == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_SPRINT_NAMES), ""))
+            throw new ConnectException("SheetsConnector configuration must include 'sprint.names' setting");
         sprints = sprintsConfig.split(",");
 
-        teamName = properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME);
-        if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), "")) {
-            throw new ConnectException("SheetsConnector configuration must include team.name setting");
-        }
-
-        sheetsImputationTopic = properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
-        if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), "")) {
-            throw new ConnectException("SheetsConnector configuration must include imputations.topic setting");
-        }
+        teamsNumConfiguration = properties.get(SheetsSourceConfig.SHEETS_TEAMS_NUMBER_CONFIG);
+        if (teamsNumConfiguration == null || Objects.equals( properties.get(SheetsSourceConfig.SHEETS_TEAMS_NUMBER_CONFIG), "") )
+            throw new ConnectException("SheetsConnector configuration must include 'sheets.teams.num' setting");
 
         pollIntervalConfiguration = properties.get(SheetsSourceConfig.SHEETS_INTERVAL_SECONDS_CONFIG);
-
+        teamsIntervalConfiguration = properties.get(SheetsSourceConfig.SHEETS_TEAMS_INTERVAL_CONFIG);
         teamId = UUID.randomUUID().toString();
-    }
-    private void setPollConfiguration() {
+        currentTaskID = 0;
 
-        if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) {
-            pollInterval = 3600;
-        } else{
-            pollInterval = Integer.parseInt(pollIntervalConfiguration);
+        spreadSheetId = new ArrayList<>();
+        teamName = new ArrayList<>();
+        sheetsImputationTopic = new ArrayList<>();
+
+        teamsNum = Integer.parseInt(teamsNumConfiguration);
+        for (int i = 0; i < teamsNum; ++i) {
+
+            String spreadSheetId = properties.get("tasks." + i + "." + SheetsSourceConfig.SPREADSHEETS_ID);
+            if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), ""))
+                throw new ConnectException("SheetsConnector configuration must include 'spreadsheet.ids' setting");
+            this.spreadSheetId.add(spreadSheetId);
+
+            String teamName = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_TEAM_NAME);
+            if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), ""))
+                throw new ConnectException("SheetsConnector configuration must include 'team.name' setting");
+            this.teamName.add(teamName);
+
+            String sheetsImputationTopic = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
+            if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), ""))
+                throw new ConnectException("SheetsConnector configuration must include 'imputations.topic' setting");
+            this.sheetsImputationTopic.add(sheetsImputationTopic);
+
         }
+    }
+
+    private void setPollConfiguration() {
+        if(pollIntervalConfiguration == null || pollIntervalConfiguration.isEmpty()) pollInterval = 3600;
+        else pollInterval = Integer.parseInt(pollIntervalConfiguration);
+    }
+
+    private void setTeamIntervalConfiguration() {
+        if(teamsIntervalConfiguration == null || teamsIntervalConfiguration.isEmpty()) teamsInterval = 90;
+        else teamsInterval = Integer.parseInt(teamsIntervalConfiguration);
     }
 
     private String getDeveloperName(final Object memberValue) {
@@ -135,8 +161,8 @@ public class SheetsSourceTask extends SourceTask {
         Double ph = information.get(9).toString().contains(",") ? Double.parseDouble(information.get(9).toString().replace(",", ".")) : Double.parseDouble(information.get(9).toString());
         Double ah = information.get(10).toString().contains(",") ? Double.parseDouble(information.get(10).toString().replace(",", ".")) : Double.parseDouble(information.get(10).toString());
         return new IterationInformation(teamId)
-                .teamName(teamName)
-                .spreadsheetId(spreadSheetId)
+                .teamName(teamName.get(currentTaskID))
+                .spreadsheetId(spreadSheetId.get(currentTaskID))
                 .timestamp(dfZULU.format(todayDate))
                 .sprintName(sprintName)
                 .developerName((String) information.get(0))
@@ -163,10 +189,10 @@ public class SheetsSourceTask extends SourceTask {
         }
         return iterationInformations;
     }
-    private List<IterationInformation> getTimeImputations() throws AuthorizationCredentialsException, IOException {
-        List<ValueRange> googleSheetsData = SheetsApi.getMembersTotalHours(sprints, spreadSheetId);
-        return generateImputationInformations(googleSheetsData);
 
+    private List<IterationInformation> getTimeImputations() throws AuthorizationCredentialsException, IOException {
+        List<ValueRange> googleSheetsData = SheetsApi.getMembersTotalHours(sprints, spreadSheetId.get(currentTaskID));
+        return generateImputationInformations(googleSheetsData);
     }
 
 
@@ -185,37 +211,48 @@ public class SheetsSourceTask extends SourceTask {
      */
     @Override
     public void start(Map<String, String> properties) {
-        taskLogger.info("connect-sheets // TASK: start");
         initializeAuthorizationCredentials(properties);
         initializeConfigurations(properties);
         setPollConfiguration();
+        setTeamIntervalConfiguration();
     }
 
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
         List <SourceRecord> records = new ArrayList<>();
-        String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime)
-                + " interval:" + pollInterval;
+        String messageTaskPollInfo = "lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPollTime) + " interval:" + pollInterval;
         taskLogger.info("Task Poll {}", messageTaskPollInfo);
-        if (lastPollTime != 0) {
-            if (System.currentTimeMillis() < ( lastPollTime + (pollInterval * 1000))) {
-                Thread.sleep(1000);
-                return records;
-            }
-        }
-        lastPollTime = System.currentTimeMillis();
-        try {
 
-            records = getTimeImputations()
+        if (lastPollTime != 0L &&
+            System.currentTimeMillis() < ( lastPollTime + ( pollInterval * 1000 ) )
+            && currentTaskID == 0) {
+
+            taskLogger.info("------- exit polling, " + (System.currentTimeMillis() - lastPollTime) / 1000L + " secs since last poll.");
+            Thread.sleep(1000L);
+        }
+
+        else {
+            if (currentTaskID == 0) lastPollTime = System.currentTimeMillis();
+            Thread.sleep(teamsInterval * 1000L); // Wait between teams
+            taskLogger.info( "\n\nStarted executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
+
+            try {
+                records = getTimeImputations()
                     .stream()
                     .parallel()
                     .map(this::getSheetSourceRecord)
                     .collect(Collectors.toList());
-        } catch (AuthorizationCredentialsException | IOException e) {
-            throw new RuntimeException(e);
+            }
+            catch (AuthorizationCredentialsException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            taskLogger.info("Records: {}", records);
+            taskLogger.info("\n\nFinished executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
+            ++currentTaskID;
+            if (currentTaskID == teamsNum) currentTaskID = 0;
         }
-        taskLogger.info("Records: {}", records);
-        taskLogger.info("connect-sheets // TASK: Finished task");
+
         return records;
     }
 
@@ -228,7 +265,7 @@ public class SheetsSourceTask extends SourceTask {
         Map<String,String> sourceOffset = new HashMap<>();
         sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
 
-        Struct imputationSchema = new Struct(SheetsSchema.sheetsInputationSchema);
+        Struct imputationSchema = new Struct(SheetsSchema.sheetsImputationSchema);
         imputationSchema.put(SheetsSchema.TEAM_ID, iterationInformation.id());
         imputationSchema.put(SheetsSchema.TEAM_NAME, iterationInformation.teamName());
         imputationSchema.put(SheetsSchema.SPREADSHEET_ID, iterationInformation.spreadsheetId());
@@ -250,10 +287,10 @@ public class SheetsSourceTask extends SourceTask {
 
         return new SourceRecord(sourcePartition,
                 sourceOffset,
-                sheetsImputationTopic,
+                sheetsImputationTopic.get(currentTaskID),
                 Schema.STRING_SCHEMA,
                 key,
-                SheetsSchema.sheetsInputationSchema,
+                SheetsSchema.sheetsImputationSchema,
                 imputationSchema);
 
     }

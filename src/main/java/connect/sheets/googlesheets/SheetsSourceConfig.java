@@ -59,9 +59,11 @@ public class SheetsSourceConfig extends AbstractConfig {
     public static final String SHEETS_CLIENT_CERTIFICATION_URL = "client.x509.cert.url";
     public static final String SHEETS_CLIENT_CERTIFICATION_URL_CONFIG_DISPLAY = "Client authorization URL";
     public static final String SHEETS_CLIENT_CERTIFICATION_URL_CONFIG_DOC = "Client authorization URL to use when connecting to Google Cloud.";
+
     /*---------------------*/
 
     /*----Subject Information----*/
+
     public static final String SPREADSHEETS_ID = "spreadsheet.id";
     public static final String SPREADSHEETS_ID_CONFIG_DISPLAY = "Spreadsheet ID";
     public static final String SPREADSHEETS_ID_CONFIG_DOC = "Spreadsheet ID to use when connecting to Google Sheets API.";
@@ -78,14 +80,27 @@ public class SheetsSourceConfig extends AbstractConfig {
 
     /*---- Kafka ----*/
     public static final String SHEETS_GROUP = "SHEETS";
+
     public static final String SHEETS_IMPUTATIONS_TOPIC_CONFIG = "imputations.topic";
     public static final String SHEETS_IMPUTATIONS_TOPIC_CONFIG_DISPLAY = "Topic to persist spreadsheet imputations.";
     public static final String SHEETS_IMPUTATIONS_TOPIC_CONFIG_DOC = "Topic to persist spreadsheet imputations.";
     public static final String SHEETS_IMPUTATIONS_TOPIC_CONFIG_DEFAULT = "imputations.topic";
-    public static final String SHEETS_INTERVAL_SECONDS_CONFIG = "sheet.interval.seconds";
+
+    public static final String SHEETS_INTERVAL_SECONDS_CONFIG = "sheets.interval.seconds";
     public static final String SHEETS_INTERVAL_SECONDS_CONFIG_DISPLAY = "Polling interval in seconds.";
     public static final String SHEETS_INTERVAL_SECONDS_CONFIG_DOC = "Polling interval in seconds.";
-    public static final Integer SHEETS_INTERVAL_SECONDS_CONFIG_DEFAULT = 86400; //24 h
+    public static final Integer SHEETS_INTERVAL_SECONDS_CONFIG_DEFAULT = 86400;
+
+    public static final String SHEETS_TEAMS_NUMBER_CONFIG = "sheets.teams.num";
+    public static final String SHEETS_TEAMS_NUMBER_CONFIG_DISPLAY = "Number of teams to retrieve data from.";
+    public static final String SHEETS_TEAMS_NUMBER_CONFIG_DOC = "Number of teams to retrieve data from.";
+    public static final Integer SHEETS_TEAMS_NUMBER_CONFIG_DEFAULT = 1;
+
+    public static final String SHEETS_TEAMS_INTERVAL_CONFIG = "sheets.teams.interval.seconds";
+    public static final String SHEETS_TEAMS_INTERVAL_CONFIG_DISPLAY = "Time interval between polling of different teams in seconds.";
+    public static final String SHEETS_TEAMS_INTERVAL_CONFIG_DOC = "Time interval between polling of different teams in seconds.";
+    public static final Integer SHEETS_TEAMS_INTERVAL_CONFIG_DEFAULT = 120;
+
     /*---------------------*/
 
     public static final ConfigDef DEFS = new ConfigDef();
@@ -94,6 +109,7 @@ public class SheetsSourceConfig extends AbstractConfig {
         DEFS
                 .define(SPREADSHEETS_ID,
                         ConfigDef.Type.STRING,
+                        "",
                         ConfigDef.Importance.HIGH,
                         SPREADSHEETS_ID_CONFIG_DOC,
                         SHEETS_GROUP,
@@ -189,12 +205,30 @@ public class SheetsSourceConfig extends AbstractConfig {
                         12,
                         ConfigDef.Width.SHORT,
                         SHEETS_INTERVAL_SECONDS_CONFIG_DISPLAY)
+                .define(SHEETS_TEAMS_NUMBER_CONFIG,
+                        ConfigDef.Type.INT,
+                        SHEETS_TEAMS_NUMBER_CONFIG_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SHEETS_TEAMS_NUMBER_CONFIG_DOC,
+                        SHEETS_GROUP,
+                        13,
+                        ConfigDef.Width.SHORT,
+                        SHEETS_TEAMS_NUMBER_CONFIG_DISPLAY)
+                .define(SHEETS_TEAMS_INTERVAL_CONFIG,
+                        ConfigDef.Type.LONG,
+                        SHEETS_TEAMS_INTERVAL_CONFIG_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SHEETS_TEAMS_INTERVAL_CONFIG_DOC,
+                        SHEETS_GROUP,
+                        14,
+                        ConfigDef.Width.SHORT,
+                        SHEETS_TEAMS_INTERVAL_CONFIG_DISPLAY)
                 .define(SHEETS_SPRINT_NAMES,
                         ConfigDef.Type.STRING,
                         ConfigDef.Importance.HIGH,
                         SHEETS_SPRINT_NAMES_CONFIG_DOC,
                         SHEETS_GROUP,
-                        13,
+                        15,
                         ConfigDef.Width.LONG,
                         SHEETS_SPRINT_NAMES_CONFIG_DISPLAY)
                 .define(SHEETS_IMPUTATIONS_TOPIC_CONFIG,
@@ -203,15 +237,16 @@ public class SheetsSourceConfig extends AbstractConfig {
                         ConfigDef.Importance.LOW,
                         SHEETS_IMPUTATIONS_TOPIC_CONFIG_DOC,
                         SHEETS_GROUP,
-                        14,
+                        16,
                         ConfigDef.Width.LONG,
                         SHEETS_IMPUTATIONS_TOPIC_CONFIG_DISPLAY)
                 .define(SHEETS_TEAM_NAME,
                         ConfigDef.Type.STRING,
+                        "",
                         ConfigDef.Importance.LOW,
                         SHEETS_TEAM_NAME_CONFIG_DOC,
                         SHEETS_GROUP,
-                        15,
+                        17,
                         ConfigDef.Width.LONG,
                         SHEETS_TEAM_NAME_CONFIG_DISPLAY);
     }
