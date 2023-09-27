@@ -70,7 +70,7 @@ public class GithubSourceConnector extends SourceConnector {
 
 			if ( githubURL == null || githubURL.isEmpty() )
 				throw new ConnectException("GithubSourceConnector configuration must include 'tasks."
-				+ i + "github.url' setting");
+				+ i + ".github.url' setting");
 
 			this.githubURL.add(githubURL);
 			this.githubIssuesTopic.add(githubIssuesTopic);
