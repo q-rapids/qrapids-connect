@@ -95,20 +95,26 @@ public class SheetsSourceTask extends SourceTask {
 
             String spreadSheetId = properties.get("tasks." + i + "." + SheetsSourceConfig.SPREADSHEETS_ID);
             if (spreadSheetId == null || Objects.equals(properties.get(SheetsSourceConfig.SPREADSHEETS_ID), ""))
-                throw new ConnectException("SheetsConnector configuration must include 'spreadsheet.ids' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks."
+                + i + ".spreadsheet.id' setting");
             this.spreadSheetId.add(spreadSheetId);
 
             String teamName = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_TEAM_NAME);
             if (teamName == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), ""))
-                throw new ConnectException("SheetsConnector configuration must include 'team.name' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks." +
+                i + ".team.name' setting");
             this.teamName.add(teamName);
 
             String sheetsImputationTopic = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
             if (sheetsImputationTopic == null || Objects.equals(properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), ""))
-                throw new ConnectException("SheetsConnector configuration must include 'imputations.topic' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks." +
+                i + ".imputations.topic' setting");
             this.sheetsImputationTopic.add(sheetsImputationTopic);
 
         }
+
+        if (teamsNum == 0)
+            throw new ConnectException("SheetsConnector configuration 'sheets.teams.num' must be bigger than 0");
     }
 
     private void setPollConfiguration() {
@@ -117,7 +123,7 @@ public class SheetsSourceTask extends SourceTask {
     }
 
     private void setTeamIntervalConfiguration() {
-        if(teamsIntervalConfiguration == null || teamsIntervalConfiguration.isEmpty()) teamsInterval = 90;
+        if(teamsIntervalConfiguration == null || teamsIntervalConfiguration.isEmpty()) teamsInterval = 120;
         else teamsInterval = Integer.parseInt(teamsIntervalConfiguration);
     }
 
@@ -234,7 +240,8 @@ public class SheetsSourceTask extends SourceTask {
         else {
             if (currentTaskID == 0) lastPollTime = System.currentTimeMillis();
             Thread.sleep(teamsInterval * 1000L); // Wait between teams
-            taskLogger.info( "\n\nStarted executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
+            taskLogger.info("\n\n\n**********");
+            taskLogger.info( "Start executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
 
             try {
                 records = getTimeImputations()
@@ -248,7 +255,8 @@ public class SheetsSourceTask extends SourceTask {
             }
 
             taskLogger.info("Records: {}", records);
-            taskLogger.info("\n\nFinished executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
+            taskLogger.info("Finished executing task " + currentTaskID + " with team name " + teamName.get(currentTaskID));
+            taskLogger.info("**********\n\n\n");
             ++currentTaskID;
             if (currentTaskID == teamsNum) currentTaskID = 0;
         }
@@ -263,7 +271,7 @@ public class SheetsSourceTask extends SourceTask {
         sourcePartition.put("spreadsheetId", iterationInformation.spreadsheetId());
 
         Map<String,String> sourceOffset = new HashMap<>();
-        sourceOffset.put("created", dfZULU.format(new Date(System.currentTimeMillis())));
+        sourceOffset.put("updated", dfZULU.format(new Date(System.currentTimeMillis())));
 
         Struct imputationSchema = new Struct(SheetsSchema.sheetsImputationSchema);
         imputationSchema.put(SheetsSchema.TEAM_ID, iterationInformation.id());

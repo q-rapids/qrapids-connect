@@ -58,19 +58,25 @@ public class SheetsSourceConnector extends SourceConnector {
 
             String spreadSheetId = properties.get("tasks." + i + "." + SheetsSourceConfig.SPREADSHEETS_ID);
             if (spreadSheetId == null || Objects.equals( properties.get(SheetsSourceConfig.SPREADSHEETS_ID), "") )
-                throw new ConnectException("SheetsConnector configuration must include 'spreadsheet.ids' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks."
+                + i + ".spreadsheet.id' setting");
             this.spreadSheetId.add(spreadSheetId);
 
             String teamName = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_TEAM_NAME);
             if (teamName == null || Objects.equals( properties.get(SheetsSourceConfig.SHEETS_TEAM_NAME), "") )
-                throw new ConnectException("SheetsConnector configuration must include 'team.name' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks." +
+                        i + ".team.name' setting");
             this.teamName.add(teamName);
 
             String sheetsImputationTopic = properties.get("tasks." + i + "." + SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG);
             if (sheetsImputationTopic == null || Objects.equals( properties.get(SheetsSourceConfig.SHEETS_IMPUTATIONS_TOPIC_CONFIG), "") )
-                throw new ConnectException("SheetsConnector configuration must include 'imputations.topic' setting");
+                throw new ConnectException("SheetsConnector configuration must include 'tasks." +
+                        i + ".imputations.topic' setting");
             this.sheetsImputationTopic.add(sheetsImputationTopic);
         }
+
+        if (numTeams == 0)
+            throw new ConnectException("SheetsConnector configuration 'sheets.teams.num' must be bigger than 0");
 
         connectorLogger.info("Start method end");
     }
