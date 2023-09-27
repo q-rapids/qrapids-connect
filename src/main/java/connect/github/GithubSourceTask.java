@@ -27,44 +27,39 @@ public class GithubSourceTask extends SourceTask {
 
 	private static final TimeZone tzUTC = TimeZone.getTimeZone("UTC");
 	private static final DateFormat dfZULU = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-	static {
-		dfZULU.setTimeZone(tzUTC);
-	}
+	static { dfZULU.setTimeZone(tzUTC); }
 
-	private final String version = "0.0.1";
-
-	private String githubOrgUrl;
-	private String[] githubUrls;
+	private List<String> githubOrgUrl;
+	private List<String[]> githubUrls;
 	private String githubSecret;
 	private String githubUser;
 	private String githubPass;
-	private String issue_topic;
-	private String commit_topic;
-	private String taiga_topic;
+	private List<String> issue_topic;
+	private List<String> commit_topic;
+	private List<String> taiga_topic;
+
 	private String githubInterval;
 	private Integer interval;
+	private String githubTeamsNum;
+	private Integer teamsNum;
+	private String githubTeamsInterval;
+	private Integer teamsInterval;
 
 	private String createdSince;
 	private Date defaultDate;
-
-	private Date issueMostRecentUpdate;
-	private Map<String, Map<String, Date>> commitMostRecentUpdate;
+	private List< Map< String, Map<String, Date> > > commitMostRecentUpdate;
 
 	private static final DateFormat onlyDate = new SimpleDateFormat("yyyy-MM-dd");
 
-	// millis of last poll
 	private long lastPoll = 0;
-
-	private Boolean firstPoll = true;
-
-	private Map<String, Boolean> firstPollInRepo;
+	private List<Boolean> firstPoll;
+	private List< Map<String, Boolean> > firstPollInRepo;
+	private int currentTaskID;
 
 	private final Logger log = Logger.getLogger(GithubSourceTask.class.getName());
 
-	private final String NULL_STRING = "null";
-
 	private static String getTaskNumber(String message) {
-		List<String> words = new ArrayList<String>(Arrays.asList(message.split(" ")));
+		List<String> words = new ArrayList<>(Arrays.asList(message.split(" ")));
 		words.removeAll(Arrays.asList("", null));
 		int i = 0;
 		while(i < words.size()){
@@ -87,52 +82,64 @@ public class GithubSourceTask extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-
 		List<SourceRecord> records = new ArrayList<>();
-
 		log.info("lastPollDeltaMillis:" + (System.currentTimeMillis() - lastPoll) + " interval:" + interval );
 
-		if ( lastPoll != 0 ) {
-			if ( System.currentTimeMillis() < ( lastPoll + (interval * 1000) ) ) {
-				log.info("------- exit polling, " + ( System.currentTimeMillis() - lastPoll ) / 1000 + " secs since last poll.");
-				Thread.sleep(1000);
-				return records;
+		if ( lastPoll != 0L &&
+			System.currentTimeMillis() < ( lastPoll + (long) (interval * 1000) )
+			&& currentTaskID == 0) {
+
+			log.info("------- exit polling, " + ( System.currentTimeMillis() - lastPoll ) / 1000 + " secs since last poll.");
+			Thread.sleep(1000);
+			return records;
+
+		}
+
+		else {
+			if (currentTaskID == 0) lastPoll = System.currentTimeMillis();
+			Thread.sleep(teamsInterval * 1000L); // Wait between teams
+			log.info("\n\n**********");
+
+			if (firstPoll.get(currentTaskID)) {
+
+				try {
+
+					if (currentTaskID == 0) defaultDate = onlyDate.parse(createdSince);
+					firstPollInRepo.add(new HashMap<>());
+					commitMostRecentUpdate.add(new HashMap<>());
+
+					for (String url : githubUrls.get(currentTaskID)) {
+						firstPollInRepo.get(currentTaskID).put(url, true);
+						Map<String, Date> aux = new HashMap<>();
+						commitMostRecentUpdate.get(currentTaskID).put(url, aux);
+					}
+
+				} catch (ParseException e) {
+					log.info("unable to parse " + createdSince);
+					throw new InterruptedException();
+				}
+
+			}
+			else {
+
+				githubUrls.remove(currentTaskID); //Update URLs in case of new repositories
+				githubUrls.add(currentTaskID, getGithubUrlsFromOrg(githubOrgUrl.get(currentTaskID)));
+
+				for ( String url : githubUrls.get(currentTaskID) ) {
+					if (!firstPollInRepo.get(currentTaskID).containsKey(url)) {
+						firstPollInRepo.get(currentTaskID).put(url, true);
+						Map<String, Date> aux = new HashMap<>();
+						commitMostRecentUpdate.get(currentTaskID).put(url, aux);
+					}
+				}
+
+				//log.info("Issue info updated since: " + issueMostRecentUpdate);
+				log.info("Is it the repo's first poll: " + firstPollInRepo.get(currentTaskID));
+				log.info("Commit info updated since: " + commitMostRecentUpdate.get(currentTaskID) + "\n\n");
 			}
 		}
 
-		lastPoll = System.currentTimeMillis();
-
-		// if mostRecentUpdate is available from offset -> storage use it
-
-		if (firstPoll) {
-			try {
-				defaultDate = onlyDate.parse(createdSince);
-				issueMostRecentUpdate = onlyDate.parse(createdSince);
-				for(String url : githubUrls){
-					firstPollInRepo.put(url, true);
-					Map<String, Date> aux = new HashMap<>();
-					commitMostRecentUpdate.put(url, aux);
-				}
-
-			} catch(ParseException e){
-				log.info("unable to parse " + createdSince);
-				throw new InterruptedException();
-			}
-		} else {
-			githubUrls = getGithubUrlsFromOrg(githubOrgUrl);
-			for (String url : githubUrls) {
-				if (!firstPollInRepo.containsKey(url)) {
-					firstPollInRepo.put(url, true);
-					Map<String, Date> aux = new HashMap<>();
-					commitMostRecentUpdate.put(url, aux);
-				}
-			}
-			//log.info("Issue info updated since: " + issueMostRecentUpdate);
-			log.info("Is it the repos' first poll: " + firstPollInRepo);
-			log.info("Commit info updated since: " + commitMostRecentUpdate);
-		}
-
-
+		log.info("Start executing task " + currentTaskID + " with Github organization " + githubOrgUrl.get(currentTaskID));
 
 		//issues
 
@@ -161,10 +168,10 @@ public class GithubSourceTask extends SourceTask {
 
 		//commits
 		try {
-			for(String url : githubUrls) {
+			for( String url : githubUrls.get(currentTaskID) ) {
 				Repository repo = GithubApi.getRepository(url, githubSecret);
 				log.info("Obtaining commits from " + url);
-				Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(url);
+				Map<String, Date> mostRecentBranchUpdates = commitMostRecentUpdate.get(currentTaskID).get(url);
 
 				int offset = 1;
 				List<Branch> branches = new ArrayList<>();
@@ -191,10 +198,10 @@ public class GithubSourceTask extends SourceTask {
 					continue;
 				}
 
-				log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators"); //one collaborator is the professor
+				//one collaborator is the professor
+				log.info("COLLABORATORS: Obtained " + (collaborators.size() - 1) + " different collaborators");
 
 				//getting a set of all new commits in every branch
-
 				Set<Commit> commitsSet = new HashSet<>();
 
 				for (Branch b : branches) {
@@ -241,27 +248,16 @@ public class GithubSourceTask extends SourceTask {
 				int merges = 0;
 				long poll = System.currentTimeMillis();
 
-				/*
-				for (Commit c :commitsSet) {
-					if((System.currentTimeMillis() - poll) >= 5000){
-						log.info("COMMITS: Obtained commit stats for " + cont + " commits");
-						poll = System.currentTimeMillis();
-					}
-					c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
-					++cont;
-				}
-				*/
-
 				for (Iterator<Commit> i = commitsSet.iterator(); i.hasNext();) {
 					Commit c = i.next();
 					++cont;
-					if((System.currentTimeMillis() - poll) >= 5000){
+					if((System.currentTimeMillis() - poll) >= 5000) {
 						log.info("COMMITS: Obtained commit stats for " + cont + " commits");
 						log.info("COMMITS: "+ merges + " commits were detected as merges and removed");
 						poll = System.currentTimeMillis();
 					}
 
-					if(c.parents.size() > 1){
+					if(c.parents.size() > 1) {
 						i.remove();
 						++merges;
 						continue;
@@ -269,27 +265,29 @@ public class GithubSourceTask extends SourceTask {
 					c.stats = GithubApi.getCommitInfo(url, githubSecret, c.sha).stats;
 				}
 
-
 				log.info("COMMITS: Commit stats for repo" + url + "successfully obtained");
 
-
-				if (firstPoll && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
-				else if (firstPollInRepo.get(url) && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				if (firstPoll.get(currentTaskID) && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
+				else if (firstPollInRepo.get(currentTaskID).get(url) && commitsSet.size() != 0) commitsSet = removeLargestOldCommit(commitsSet);
 
 				if (commitsSet.size() != 0) records.addAll(getCommitSourceRecords(commitsSet, collaborators, repo));
 
-				commitMostRecentUpdate.put(url, mostRecentBranchUpdates);
-				if (firstPollInRepo.get(url)) firstPollInRepo.put(url, false);
+				commitMostRecentUpdate.get(currentTaskID).put(url, mostRecentBranchUpdates);
+				if (firstPollInRepo.get(currentTaskID).get(url)) firstPollInRepo.get(currentTaskID).put(url, false);
 			}
-			firstPoll = false;
+
+			firstPoll.remove(currentTaskID);
+			firstPoll.add(currentTaskID, false);
+			log.info("Finished executing task " + currentTaskID + " with Github organization " + githubOrgUrl.get(currentTaskID));
+			log.info("**********\n\n\n");
+
+			++currentTaskID;
+			if (currentTaskID == teamsNum) currentTaskID = 0;
 
 		} catch (RuntimeException e){
-			if(RESTInvoker.HTTP_STATUS_FORBIDDEN.equals(e.getMessage())) {
-				log.info("ERROR: GitHub API rate limit exeeded. The data will not be updated until the next poll");
-			}
-			else{
-				throw new RuntimeException(e);
-			}
+			if (RESTInvoker.HTTP_STATUS_FORBIDDEN.equals(e.getMessage()))
+				log.info("ERROR: GitHub API rate limit exceeded. The data will not be updated until the next poll");
+			else throw new RuntimeException(e);
 		}
 		return records;
 	}
@@ -322,7 +320,7 @@ public class GithubSourceTask extends SourceTask {
 
 			User user = null;
 
-			//if the commit author is not associated with github, a default user is created
+			//if the commit author is not associated with GitHub, a default user is created
 			if(i.author != null) {
 				for (User u : collaborators) {
 					if (u.login.equals(i.author.login)) {
@@ -332,7 +330,7 @@ public class GithubSourceTask extends SourceTask {
 				}
 			}
 
-			//if the commit author is not associated with github, a default user is created
+			//if the commit author is not associated with GitHub, a default user is created
 			if(user == null) user = new User("anonymous", 0, "", "", false);
 
             log.info("COMMIT URL: " + i.url);
@@ -350,11 +348,12 @@ public class GithubSourceTask extends SourceTask {
 			commit.put(GithubSchema.FIELD_GITHUB_COMMIT_MESSAGE_WORDCOUNT, (long) i.commit.message.split(" ").length);
 
 			boolean task = i.commit.message.toLowerCase().contains("task") || i.commit.message.toLowerCase().contains("tasca") || i.commit.message.toLowerCase().contains("tarea");
+			String NULL_STRING = "null";
 			if (task) {
 				String num = getTaskNumber(i.commit.message);
 				if(num != null) {
 					try {
-						SearchResponse response = getTaskReference(taiga_topic, Integer.parseInt(num));
+						SearchResponse response = getTaskReference(taiga_topic.get(currentTaskID), Integer.parseInt(num));
 						if(response.getHits().totalHits == 1) {
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_CONTAINS_TASK, true);
 							commit.put(GithubSchema.FIELD_GITHUB_COMMIT_TASK_REF, num);
@@ -402,10 +401,10 @@ public class GithubSourceTask extends SourceTask {
 			sourcePartition.put( "githubUrl", repo.url );
 
 			Map<String,String> sourceOffset = new HashMap<>();
-			sourceOffset.put( "added", dfZULU.format( new Date(System.currentTimeMillis()) ));
+			sourceOffset.put( "updated", dfZULU.format( new Date(System.currentTimeMillis()) ) );
 
-			// we use the github commit id (i.sha) as key in the elasticsearch index (_id)
-			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic, Schema.STRING_SCHEMA, i.sha, GithubSchema.githubCommit , commit);
+			// we use the GitHub commit id (i.sha) as key in the elasticsearch index (_id)
+			SourceRecord sr = new SourceRecord(sourcePartition, sourceOffset, commit_topic.get(currentTaskID), Schema.STRING_SCHEMA, i.sha, GithubSchema.githubCommit , commit);
 			result.add(sr);
         }
 
@@ -415,8 +414,7 @@ public class GithubSourceTask extends SourceTask {
 	private String[] getGithubUrlsFromOrg(String githubOrgUrl) {
 		Repository[] repos = GithubApi.getReposFromOrganization(githubOrgUrl, githubSecret);
 		String[] repoUrls = new String[repos.length];
-		for (int i = 0; i < repos.length; ++i)
-			repoUrls[i] = repos[i].url;
+		for (int i = 0; i < repos.length; ++i) repoUrls[i] = repos[i].url;
 		return repoUrls;
 	}
 
@@ -507,53 +505,46 @@ public class GithubSourceTask extends SourceTask {
 	@Override
 	public void start(Map<String, String> props) {
 
-		commitMostRecentUpdate = new HashMap<>();
-		firstPollInRepo = new HashMap<>();
-
-		log.info("connect-github: start");
+		commitMostRecentUpdate = new ArrayList<>();
+		firstPollInRepo = new ArrayList<>();
 		log.info(props.toString());
 
-		githubSecret	= props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG );
-		githubOrgUrl 	= props.get( GithubSourceConfig.GITHUB_URL_CONFIG );
-		githubUser 		= props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
-		githubPass 		= props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
-		issue_topic		= props.get( GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG );
-		commit_topic	= props.get( GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG );
-		createdSince	= props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
-		githubInterval 	= props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
-		taiga_topic		= props.get( GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG );
-		githubUrls 		= getGithubUrlsFromOrg(githubOrgUrl);
+		githubSecret = props.get( GithubSourceConfig.GITHUB_SECRET_CONFIG );
+		githubUser = props.get( GithubSourceConfig.GITHUB_USER_CONFIG );
+		githubPass = props.get( GithubSourceConfig.GITHUB_PASS_CONFIG );
+		createdSince = props.get( GithubSourceConfig.GITHUB_CREATED_SINCE_CONFIG);
+		githubInterval = props.get( GithubSourceConfig.GITHUB_INTERVAL_SECONDS_CONFIG );
+		githubTeamsNum = props.get( GithubSourceConfig.GITHUB_TEAMS_NUMBER_CONFIG );
+		githubTeamsInterval	= props.get( GithubSourceConfig.GITHUB_TEAMS_INTERVAL_CONFIG );
 
-		for(String url : githubUrls) log.info("github.url: " + url);
-		log.info("github.created.since: " + createdSince);
-		log.info("github.interval.seconds: " + githubInterval);
+		teamsNum = Integer.parseInt(githubTeamsNum);
+		firstPoll = new ArrayList<>( Collections.nCopies(teamsNum, true) );
+		currentTaskID = 0;
 
-		log.info("github.issue.topic: " + issue_topic);
-		log.info("github.commit.topic: " + commit_topic);
+		githubOrgUrl = new ArrayList<>();
+		githubUrls = new ArrayList<>();
+		issue_topic = new ArrayList<>();
+		commit_topic = new ArrayList<>();
+		taiga_topic = new ArrayList<>();
+
+		for (int i = 0; i < teamsNum; ++i) {
+			githubOrgUrl.add( props.get( "tasks." + i + "." + GithubSourceConfig.GITHUB_URL_CONFIG ) );
+			issue_topic.add( props.get( "tasks." + i + "." + GithubSourceConfig.GITHUB_ISSUES_TOPIC_CONFIG ) );
+			commit_topic.add( props.get( "tasks." + i + "." + GithubSourceConfig.GITHUB_COMMIT_TOPIC_CONFIG ) );
+			taiga_topic.add( props.get( "tasks." + i + "." + GithubSourceConfig.TAIGA_TASK_TOPIC_CONFIG ) );
+			githubUrls.add( getGithubUrlsFromOrg(githubOrgUrl.get(i)) );
+		}
+
+		for (int i = 0; i < githubOrgUrl.size(); ++i) {
+			log.info("Organization URL: " + githubOrgUrl.get(i));
+			String[] reposUrl = githubUrls.get(i);
+			for (String s : reposUrl) log.info("\tRepository URL: " + s);
+		}
 		
-		if ( (githubInterval == null || githubInterval.isEmpty()) ) {
-			interval = 3600;
-		} else {
-			interval = Integer.parseInt(githubInterval);
-		}
-
-		// offsets present?
-		Map<String,String> sourcePartition = new HashMap<>();
-		if (githubUrls.length != 0) {
-			sourcePartition.put("githubUrl", githubUrls[0]);
-			if (context != null) {
-				Map<String, Object> offset = context.offsetStorageReader().offset(sourcePartition);
-				if (offset != null && offset.containsKey("updated")) {
-					try {
-						issueMostRecentUpdate = dfZULU.parse((String) offset.get("updated"));
-						log.info("--------------------------" + "found offset: updated=" + issueMostRecentUpdate);
-					} catch (ParseException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}
+		if ( (githubInterval == null || githubInterval.isEmpty()) ) interval = 3600;
+		else interval = Integer.parseInt(githubInterval);
+		if ( (githubTeamsInterval == null || githubTeamsInterval.isEmpty()) ) teamsInterval = 120;
+		else teamsInterval = Integer.parseInt(githubTeamsInterval);
 	}
 
 	@Override
@@ -562,7 +553,7 @@ public class GithubSourceTask extends SourceTask {
 	}
 
 	public String version() {
-		return version;
+		return "0.0.1";
 	}
 
 }

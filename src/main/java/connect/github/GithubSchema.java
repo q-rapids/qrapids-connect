@@ -15,7 +15,7 @@ import org.apache.kafka.connect.data.SchemaBuilder;
  */
 public class GithubSchema {
 	
-	// Issues
+	//issues
 	public static String FIELD_GITHUB_ISSUE_URL = "url";
 	public static String FIELD_GITHUB_ISSUE_HTML_URL = "html_url";
 	public static String FIELD_GITHUB_ISSUE_ID = "id";
@@ -24,13 +24,10 @@ public class GithubSchema {
 	public static String FIELD_GITHUB_ISSUE_USER = "user";
 	public static String FIELD_GITHUB_ISSUE_LABELS = "labels";
 	public static String FIELD_GITHUB_ISSUE_STATE = "state";
-
 	public static String FIELD_GITHUB_ISSUE_ASSIGNEES = "assignees";
-
 	public static String FIELD_GITHUB_ISSUE_CREATED_AT = "created_at";
 	public static String FIELD_GITHUB_ISSUE_UPDATED_AT = "updated_at";
 	public static String FIELD_GITHUB_ISSUE_CLOSED_AT = "closed_at";
-
 	public static String FIELD_GITHUB_ISSUE_BODY = "body";
 
 
@@ -56,10 +53,6 @@ public class GithubSchema {
 	public static String FIELD_GITHUB_COMMIT_REASON = "verified_reason";
 	public static String FIELD_GITHUB_COMMIT_STATS = "stats";
 
-	//userCommit
-
-
-
 	//stats
 	public static String FIELD_GITHUB_STATS_TOTAL = "total";
 	public static String FIELD_GITHUB_STATS_ADD = "additions";
@@ -81,7 +74,6 @@ public class GithubSchema {
 			.build();
 	
 	public static Schema githubIssue = SchemaBuilder.struct().name("github")
-
 		.field(FIELD_GITHUB_ISSUE_URL, Schema.OPTIONAL_STRING_SCHEMA)
 		.field(FIELD_GITHUB_ISSUE_HTML_URL, Schema.STRING_SCHEMA)
 		.field(FIELD_GITHUB_ISSUE_ID, Schema.OPTIONAL_STRING_SCHEMA)
