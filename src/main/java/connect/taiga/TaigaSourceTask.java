@@ -52,20 +52,20 @@ public class TaigaSourceTask extends SourceTask {
 
     private Boolean followsPattern(String description) {
         List<String> patterns = Arrays.asList(
-            "AS.*I WANT.*SO THAT.*",
-            "AS.*I WANT.*TO.*",
-            "COMO.*QUIERO.*DE MANERA QUE.*",
-            "COMO.*QUIERO.*DE FORMA QUE.*",
-            "COMO.*QUIERO.*PARA.*",
-            "COMO.*QUIERO.*POR.*",
-            "COMO.*QUIERO.*PORQUÉ.*",
-            "COMO.*QUIERO.*PORQUE.*",
-            "COM.*VULL.*DE MANERA QUE.*",
-            "COM.*VULL.*DE FORMA QUE.*",
-            "COM.*VULL.*PER.*",
-            "COM.*VULL.*PERQUE.*",
-            "COM.*VULL.*PERQUÈ.*",
-            "COM.*VULL.*PERQUÉ.*"
+            "AS[\\S\\s]*I WANT[\\S\\s]*SO THAT[\\S\\s]*",
+            "AS[\\S\\s]*I WANT[\\S\\s]*TO[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*DE MANERA QUE[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*DE FORMA QUE[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PARA[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*POR[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PORQUÉ[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PORQUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*DE MANERA QUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*DE FORMA QUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PER[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUÈ[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUÉ[\\S\\s]*"
         );
         for (String pattern : patterns) {
             Pattern regex = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
