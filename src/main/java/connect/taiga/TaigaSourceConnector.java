@@ -55,17 +55,26 @@ public class TaigaSourceConnector extends SourceConnector{
 
         int teamsNum = Integer.parseInt(taigaTeamsNum);
         for (int i = 0; i < teamsNum; ++i) {
-            taigaSlug.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_SLUG_CONFIG ) );
+
+            String taigaSlug = props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_SLUG_CONFIG );
+            this.taigaSlug.add(taigaSlug);
+            if ( taigaSlug == null || taigaSlug.isEmpty() )
+                throw new ConnectException("TaigaSourceConnector configuration must include 'tasks." +
+                i + ".slug' setting");
+
             taigaIssueTopic.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_ISSUE_TOPIC_CONFIG ) );
             taigaMetricEpic.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_EPIC_TOPIC_CONFIG ) );
             taigaMetricUserStory.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_USERSTORY_TOPIC_CONFIG ) );
             taigaMetricTask.add( props.get( "tasks." + i + "." + TaigaSourceConfig.TAIGA_TASK_TOPIC_CONFIG ) );
+
         }
 
         if ( taigaURL == null || taigaURL.isEmpty() )
             throw new ConnectException("TaigaSourceConnector configuration must include 'taiga.url' setting");
         if ( taigaTeamsNum == null || taigaTeamsNum.isEmpty() )
             throw new ConnectException("TaigaSourceConnector configuration must include 'taiga.teams.num' setting");
+        if (teamsNum == 0)
+            throw new ConnectException("TaigaSourceConnector configuration 'taiga.teams.num' must be bigger than 0");
     }
 
     @Override

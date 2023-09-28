@@ -40,11 +40,8 @@ public class TaigaSourceTask extends SourceTask {
     private String taigaTaskCustomAttributes;
     private String taigaUserstoryCustomAttributes;
     private Integer count = 0;
-    private String updatedSince;
-    private Date mostRecentUpdate;
     private static final DateFormat onlyDate;
     private long lastPoll = 0L;
-    private Boolean firstPoll = true;
     private int currentTaskID;
     private final Logger log = Logger.getLogger(TaigaSourceTask.class.getName());
 
@@ -53,20 +50,20 @@ public class TaigaSourceTask extends SourceTask {
 
     private Boolean followsPattern(String description) {
         List<String> patterns = Arrays.asList(
-            "AS.*I WANT.*SO THAT.*",
-            "AS.*I WANT.*TO.*",
-            "COMO.*QUIERO.*DE MANERA QUE.*",
-            "COMO.*QUIERO.*DE FORMA QUE.*",
-            "COMO.*QUIERO.*PARA.*",
-            "COMO.*QUIERO.*POR.*",
-            "COMO.*QUIERO.*PORQUÉ.*",
-            "COMO.*QUIERO.*PORQUE.*",
-            "COM.*VULL.*DE MANERA QUE.*",
-            "COM.*VULL.*DE FORMA QUE.*",
-            "COM.*VULL.*PER.*",
-            "COM.*VULL.*PERQUE.*",
-            "COM.*VULL.*PERQUÈ.*",
-            "COM.*VULL.*PERQUÉ.*"
+            "AS[\\S\\s]*I WANT[\\S\\s]*SO THAT[\\S\\s]*",
+            "AS[\\S\\s]*I WANT[\\S\\s]*TO[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*DE MANERA QUE[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*DE FORMA QUE[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PARA[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*POR[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PORQUÉ[\\S\\s]*",
+            "COMO[\\S\\s]*QUIERO[\\S\\s]*PORQUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*DE MANERA QUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*DE FORMA QUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PER[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUE[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUÈ[\\S\\s]*",
+            "COM[\\S\\s]*VULL[\\S\\s]*PERQUÉ[\\S\\s]*"
         );
         for (String pattern : patterns) {
             Pattern regex = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
@@ -85,7 +82,7 @@ public class TaigaSourceTask extends SourceTask {
         this.log.info("lastPollDeltaMillis:" + (System.currentTimeMillis() - this.lastPoll) + " interval:" + this.interval);
 
         if (this.lastPoll != 0L &&
-            System.currentTimeMillis() < this.lastPoll + (long) (this.interval * 1000)
+            System.currentTimeMillis() < ( this.lastPoll + (long) (this.interval * 1000) )
             && this.currentTaskID == 0) {
 
             this.log.info("------- exit polling, " + (System.currentTimeMillis() - this.lastPoll) / 1000L + " secs since last poll.");
@@ -94,40 +91,19 @@ public class TaigaSourceTask extends SourceTask {
         }
 
         else {
-            if (this.currentTaskID == 0)
-                this.lastPoll = System.currentTimeMillis();
-
-            // Esperar entre equipo y equipo para evitar error HTTP 429
-            Thread.sleep(this.teamsInterval * 1000L);
-
-            if (this.firstPoll) {
-                if (this.mostRecentUpdate != null)
-                    this.updatedSince = onlyDate.format(this.mostRecentUpdate);
-                else {
-                    this.updatedSince = "2000-01-01";
-                    try {
-                        this.mostRecentUpdate = onlyDate.parse(this.updatedSince);
-                    } catch (ParseException e) {
-                        this.log.info("unable to parse " + this.updatedSince);
-                        throw new InterruptedException();
-                    }
-                }
-            }
-            else this.log.info("Query updated since: " + this.mostRecentUpdate);
+            if (this.currentTaskID == 0) this.lastPoll = System.currentTimeMillis();
+            Thread.sleep(this.teamsInterval * 1000L); // Wait between teams
 
             if (!this.taigaUser.equals("XXXX") && !this.taigaUser.equals(" ") && !this.taigaUser.equals(""))
                 this.taigaToken = TaigaApi.Login(this.taigaUrl, this.taigaUser, this.taigaPass);
             else this.taigaToken = null;
 
-            this.log.info("Start executing task " + this.currentTaskID + " with Taiga slug " + this.taigaSlug.get(this.currentTaskID) + "\n\n");
+            this.log.info("\n\n**********");
+            this.log.info("Start executing task " + this.currentTaskID + " with Taiga slug " + this.taigaSlug.get(this.currentTaskID));
             String taigaProjectId = String.valueOf(TaigaApi.getProjectId(this.taigaUrl, this.taigaSlug.get(this.currentTaskID), this.taigaToken));
             Project myProject = TaigaApi.getProject(this.taigaUrl, taigaProjectId, this.taigaToken);
             Issue[] redmineIssues = TaigaApi.getIssuesByProjectId(this.taigaUrl, taigaProjectId, this.taigaToken);
             records.addAll(this.getIssueSourceRecords(redmineIssues, myProject));
-
-            Date maxUpdatedOn = null;
-            if (redmineIssues.length > 0)
-                maxUpdatedOn = redmineIssues[0].modified_date;
 
             Epic[] myEpics = TaigaApi.getEpicsByProjectID(this.taigaUrl, taigaProjectId, this.taigaToken);
             UserStory[] myUserStories = TaigaApi.getUserStoriesByProjectId(this.taigaUrl, taigaProjectId, this.taigaToken);
@@ -148,13 +124,11 @@ public class TaigaSourceTask extends SourceTask {
             records.addAll(this.getTaigaUserStories(myUserStories, myMilestones, userstoryAttributesIDs));
             records.addAll(this.getTaigaTasks(myTasks, taskAttributesIDs, myMilestones));
 
-            this.mostRecentUpdate = maxUpdatedOn;
-            this.firstPoll = false;
-            this.log.info("Finished executing task " + this.currentTaskID +" with Taiga slug " + this.taigaSlug.get(this.currentTaskID) + "\n\n");
+            this.log.info("Finished executing task " + this.currentTaskID +" with Taiga slug " + this.taigaSlug.get(this.currentTaskID));
+            this.log.info("**********\n\n");
 
             ++this.currentTaskID;
-            if (this.currentTaskID == this.teamsNum)
-                this.currentTaskID = 0;
+            if (this.currentTaskID == this.teamsNum) this.currentTaskID = 0;
         }
         return records;
     }
@@ -503,30 +477,11 @@ public class TaigaSourceTask extends SourceTask {
         this.log.info("taiga.url: " + this.taigaUrl);
         this.log.info("taiga.interval.seconds: " + taigaInterval);
 
-        if (taigaInterval != null && !taigaInterval.isEmpty())
-            this.interval = Integer.parseInt(taigaInterval);
-        else this.interval = 3600;
-
-        if (taigaTeamsInterval != null && !taigaTeamsInterval.isEmpty())
-            this.teamsInterval = Integer.parseInt(taigaTeamsInterval);
-        else this.teamsInterval = 120;
-
+        if (taigaInterval == null || taigaInterval.isEmpty()) this.interval = 3600;
+        else this.interval = Integer.parseInt(taigaInterval);
+        if (taigaTeamsInterval == null || taigaTeamsInterval.isEmpty()) this.teamsInterval = 120;
+        else this.teamsInterval = Integer.parseInt(taigaTeamsInterval);
         currentTaskID = 0;
-
-        Map<String, String> sourcePartition = new HashMap<>();
-        sourcePartition.put("taigaUrl", this.taigaUrl);
-        if (this.context != null) {
-            Map<String, Object> offset = this.context.offsetStorageReader().offset(sourcePartition);
-            if (offset != null) {
-                try {
-                    this.mostRecentUpdate = dfZULU.parse((String)offset.get("updated"));
-                    this.log.info("--------------------------found offset: updated=" + this.mostRecentUpdate);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
     }
 
     public void stop() {
